@@ -1,0 +1,29 @@
+# ==================
+# Backend (Node.js)
+# ==================
+backend/node_modules/
+backend/.env
+backend/uploads/
+
+# ==================
+# Flutter (both apps)
+# ==================
+**/build/
+**/.dart_tool/
+**/.packages
+**/.flutter-plugins
+**/.flutter-plugins-dependencies
+**/android/.gradle/
+**/ios/Pods/
+**/.DS_Store
+
+# ==================
+# Editors
+# ==================
+.vscode/
+.idea/
+
+# ==================
+# Logs
+# ==================
+*.log
