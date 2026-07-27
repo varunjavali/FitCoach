@@ -1,4 +1,7 @@
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../models/client_model.dart';
@@ -45,6 +48,23 @@ class _AddDietScreenState extends State<AddDietScreen> {
     "Saturday",
     "Sunday",
   ];
+
+  //---------------------------------------------------------
+  // Theme constants — shared across the app
+  //---------------------------------------------------------
+
+  static const _bgGradient = LinearGradient(
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+    colors: [
+      Color(0xff0F2027),
+      Color(0xff203A43),
+      Color(0xff2C5364),
+    ],
+  );
+
+  static final Color _accent = Colors.greenAccent.shade400;
+
   void addMeal() {
     setState(() {
       meals.add(
@@ -123,13 +143,71 @@ class _AddDietScreenState extends State<AddDietScreen> {
     }
   }
 
+  //---------------------------------------------------------
+  // Themed input decoration — shared by all fields + dropdowns
+  //---------------------------------------------------------
+
+  InputDecoration _decoration(String label) {
+    return InputDecoration(
+      labelText: label,
+      labelStyle: const TextStyle(color: Colors.white70),
+      filled: true,
+      fillColor: Colors.white.withOpacity(.08),
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(14),
+        borderSide: BorderSide.none,
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(14),
+        borderSide: BorderSide.none,
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(14),
+        borderSide: BorderSide(color: _accent, width: 1.5),
+      ),
+      errorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(14),
+        borderSide: const BorderSide(color: Colors.redAccent, width: 1.2),
+      ),
+      focusedErrorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(14),
+        borderSide: const BorderSide(color: Colors.redAccent, width: 1.5),
+      ),
+    );
+  }
+
+  Widget _glassCard({required Widget child, EdgeInsets? padding}) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(18),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
+        child: Container(
+          padding: padding,
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                Colors.white.withOpacity(.12),
+                Colors.white.withOpacity(.05),
+              ],
+            ),
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(color: Colors.white.withOpacity(.18)),
+          ),
+          child: child,
+        ),
+      ),
+    );
+  }
+
   Widget clientDropdown() {
     return DropdownButtonFormField<ClientModel>(
       value: selectedClient,
-      decoration: InputDecoration(
-        labelText: "Select Client",
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-      ),
+      dropdownColor: const Color(0xff203A43),
+      style: const TextStyle(color: Colors.white),
+      iconEnabledColor: Colors.white70,
+      decoration: _decoration("Select Client"),
       items: clients.map((client) {
         return DropdownMenuItem(value: client, child: Text(client.name));
       }).toList(),
@@ -144,10 +222,10 @@ class _AddDietScreenState extends State<AddDietScreen> {
   Widget dayDropdown() {
     return DropdownButtonFormField<String>(
       value: selectedDay,
-      decoration: InputDecoration(
-        labelText: "Day",
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-      ),
+      dropdownColor: const Color(0xff203A43),
+      style: const TextStyle(color: Colors.white),
+      iconEnabledColor: Colors.white70,
+      decoration: _decoration("Day"),
       items: days.map((day) {
         return DropdownMenuItem(value: day, child: Text(day));
       }).toList(),
@@ -163,10 +241,8 @@ class _AddDietScreenState extends State<AddDietScreen> {
     return TextFormField(
       initialValue: waterIntake.toString(),
       keyboardType: TextInputType.number,
-      decoration: InputDecoration(
-        labelText: "Water Intake (Litres)",
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-      ),
+      style: const TextStyle(color: Colors.white),
+      decoration: _decoration("Water Intake (Litres)"),
       onChanged: (value) {
         waterIntake = int.tryParse(value) ?? 3;
       },
@@ -182,25 +258,44 @@ class _AddDietScreenState extends State<AddDietScreen> {
       text: meal.calories == 0 ? "" : meal.calories.toString(),
     );
 
-    return Card(
-      margin: const EdgeInsets.only(bottom: 18),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-      child: Padding(
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 18),
+      child: _glassCard(
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
             Row(
               children: [
+                // Small, clear icon so each meal reads at a glance.
+                Container(
+                  width: 32,
+                  height: 32,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: _accent.withOpacity(.16),
+                  ),
+                  child: Icon(
+                    Icons.restaurant,
+                    color: _accent,
+                    size: 16,
+                  ),
+                ),
+                const SizedBox(width: 10),
                 Text(
                   "Meal ${index + 1}",
-                  style: const TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
+                  style: GoogleFonts.poppins(
+                    fontSize: 16,
+                    color: Colors.white,
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
                 const Spacer(),
                 IconButton(
-                  icon: const Icon(Icons.delete, color: Colors.red),
+                  icon: const Icon(
+                    Icons.delete_outline,
+                    color: Colors.redAccent,
+                    size: 20,
+                  ),
                   onPressed: () => removeMeal(index),
                 ),
               ],
@@ -210,10 +305,10 @@ class _AddDietScreenState extends State<AddDietScreen> {
 
             DropdownButtonFormField<String>(
               value: meal.mealType,
-              decoration: const InputDecoration(
-                labelText: "Meal Type",
-                border: OutlineInputBorder(),
-              ),
+              dropdownColor: const Color(0xff203A43),
+              style: const TextStyle(color: Colors.white),
+              iconEnabledColor: Colors.white70,
+              decoration: _decoration("Meal Type"),
               items: const [
                 DropdownMenuItem(value: "Breakfast", child: Text("Breakfast")),
                 DropdownMenuItem(value: "Lunch", child: Text("Lunch")),
@@ -236,10 +331,8 @@ class _AddDietScreenState extends State<AddDietScreen> {
 
             TextField(
               controller: foodController,
-              decoration: const InputDecoration(
-                labelText: "Food",
-                border: OutlineInputBorder(),
-              ),
+              style: const TextStyle(color: Colors.white),
+              decoration: _decoration("Food"),
               onChanged: (value) {
                 meals[index] = MealModel(
                   mealType: meals[index].mealType,
@@ -254,10 +347,8 @@ class _AddDietScreenState extends State<AddDietScreen> {
 
             TextField(
               controller: quantityController,
-              decoration: const InputDecoration(
-                labelText: "Quantity",
-                border: OutlineInputBorder(),
-              ),
+              style: const TextStyle(color: Colors.white),
+              decoration: _decoration("Quantity"),
               onChanged: (value) {
                 meals[index] = MealModel(
                   mealType: meals[index].mealType,
@@ -273,10 +364,8 @@ class _AddDietScreenState extends State<AddDietScreen> {
             TextField(
               controller: calorieController,
               keyboardType: TextInputType.number,
-              decoration: const InputDecoration(
-                labelText: "Calories",
-                border: OutlineInputBorder(),
-              ),
+              style: const TextStyle(color: Colors.white),
+              decoration: _decoration("Calories"),
               onChanged: (value) {
                 meals[index] = MealModel(
                   mealType: meals[index].mealType,
@@ -292,182 +381,282 @@ class _AddDietScreenState extends State<AddDietScreen> {
     );
   }
 
+  PreferredSizeWidget _glassAppBar(String title) {
+    return PreferredSize(
+      preferredSize: const Size.fromHeight(kToolbarHeight),
+      child: ClipRRect(
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
+          child: AppBar(
+            backgroundColor: Colors.white.withOpacity(.08),
+            elevation: 0,
+            scrolledUnderElevation: 0,
+            iconTheme: const IconThemeData(color: Colors.white),
+            title: Text(
+              title,
+              style: GoogleFonts.poppins(
+                color: Colors.white,
+                fontSize: 18,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     if (loadingClients) {
-      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+      return Scaffold(
+        body: Container(
+          decoration: const BoxDecoration(gradient: _bgGradient),
+          child: Center(
+            child: CircularProgressIndicator(color: _accent),
+          ),
+        ),
+      );
     }
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text(widget.diet == null ? "Add Diet" : "Edit Diet"),
-      ),
-      body: Form(
-        key: _formKey,
-        child: ListView(
-          padding: const EdgeInsets.all(20),
-          children: [
-            titleField(),
+      extendBodyBehindAppBar: true,
+      appBar: _glassAppBar(widget.diet == null ? "Add Diet" : "Edit Diet"),
+      body: Stack(
+        children: [
 
-            const SizedBox(height: 18),
+          Container(
+            width: double.infinity,
+            height: double.infinity,
+            decoration: const BoxDecoration(gradient: _bgGradient),
+          ),
 
-            clientDropdown(),
-
-            const SizedBox(height: 18),
-
-            dayDropdown(),
-
-            const SizedBox(height: 18),
-
-            waterField(),
-
-            const SizedBox(height: 18),
-
-            TextFormField(
-              controller: notesController,
-              maxLines: 3,
-              decoration: InputDecoration(
-                labelText: "Notes",
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
+          Positioned(
+            top: -90,
+            right: -70,
+            child: Container(
+              width: 200,
+              height: 200,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: Colors.white.withOpacity(0.06),
               ),
             ),
+          ),
 
-            const SizedBox(height: 25),
-
-            const Text(
-              "Meals",
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+          Positioned(
+            bottom: -110,
+            left: -80,
+            child: Container(
+              width: 240,
+              height: 240,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: Colors.white.withOpacity(0.05),
+              ),
             ),
+          ),
 
-            const SizedBox(height: 15),
+          SafeArea(
+            child: Form(
+              key: _formKey,
+              child: ListView(
+                padding: EdgeInsets.fromLTRB(20, kToolbarHeight + 14, 20, 20),
+                children: [
+                  titleField(),
 
-            ...List.generate(meals.length, (index) => mealCard(index)),
+                  const SizedBox(height: 18),
 
-            OutlinedButton.icon(
-              onPressed: addMeal,
-              icon: const Icon(Icons.add),
-              label: const Text("Add Meal"),
-            ),
+                  clientDropdown(),
 
-            const SizedBox(height: 30),
+                  const SizedBox(height: 18),
 
-            SizedBox(
-              height: 55,
-              child: ElevatedButton(
-                onPressed: loading ? null : saveDiet,
-                child: loading
-                    ? const CircularProgressIndicator(color: Colors.white)
-                    : Text(
-                        widget.diet == null ? "SAVE DIET" : "UPDATE DIET",
-                        style: const TextStyle(fontSize: 18),
+                  dayDropdown(),
+
+                  const SizedBox(height: 18),
+
+                  waterField(),
+
+                  const SizedBox(height: 18),
+
+                  TextFormField(
+                    controller: notesController,
+                    maxLines: 3,
+                    style: const TextStyle(color: Colors.white),
+                    decoration: _decoration("Notes"),
+                  ),
+
+                  const SizedBox(height: 25),
+
+                  Text(
+                    "Meals",
+                    style: GoogleFonts.poppins(
+                      fontSize: 18,
+                      color: Colors.white,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+
+                  const SizedBox(height: 15),
+
+                  ...List.generate(meals.length, (index) => mealCard(index)),
+
+                  OutlinedButton.icon(
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: Colors.white,
+                      side: BorderSide(color: Colors.white.withOpacity(.30)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14),
                       ),
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                    ),
+                    onPressed: addMeal,
+                    icon: const Icon(Icons.add, size: 18),
+                    label: Text(
+                      "Add Meal",
+                      style: GoogleFonts.poppins(fontSize: 13),
+                    ),
+                  ),
+
+                  const SizedBox(height: 30),
+
+                  SizedBox(
+                    height: 55,
+                    child: ElevatedButton(
+                      onPressed: loading ? null : saveDiet,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: _accent,
+                        foregroundColor: Colors.black,
+                        elevation: 8,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(15),
+                        ),
+                      ),
+                      child: loading
+                          ? const SizedBox(
+                              width: 24,
+                              height: 24,
+                              child: CircularProgressIndicator(
+                                color: Colors.black,
+                                strokeWidth: 2.5,
+                              ),
+                            )
+                          : Text(
+                              widget.diet == null
+                                  ? "SAVE DIET"
+                                  : "UPDATE DIET",
+                              style: GoogleFonts.poppins(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.black,
+                              ),
+                            ),
+                    ),
+                  ),
+
+                  const SizedBox(height: 20),
+                ],
               ),
             ),
-
-            const SizedBox(height: 20),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
 
   Future<void> saveDiet() async {
-  if (!_formKey.currentState!.validate()) return;
+    if (!_formKey.currentState!.validate()) return;
 
-  if (selectedClient == null) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text("Please select a client"),
-      ),
-    );
-    return;
-  }
-
-  if (meals.isEmpty) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text("Please add at least one meal"),
-      ),
-    );
-    return;
-  }
-
-  try {
-    setState(() {
-      loading = true;
-    });
-
-    final prefs = await SharedPreferences.getInstance();
-
-    final token = prefs.getString("token");
-
-    if (token == null) {
-      throw Exception("Login expired");
+    if (selectedClient == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Please select a client"),
+        ),
+      );
+      return;
     }
 
-    final diet = DietModel(
-      id: widget.diet?.id ?? "",
-      clientId: selectedClient!.id,
-      trainerId: "",
-      title: titleController.text.trim(),
-      day: selectedDay,
-      meals: meals,
-      waterIntake: waterIntake,
-      notes: notesController.text.trim(),
-    );
+    if (meals.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Please add at least one meal"),
+        ),
+      );
+      return;
+    }
 
-    if (widget.diet == null) {
-      await dietService.addDiet(token, diet);
-    } else {
-      await dietService.updateDiet(
-        token,
-        widget.diet!.id,
-        diet,
+    try {
+      setState(() {
+        loading = true;
+      });
+
+      final prefs = await SharedPreferences.getInstance();
+
+      final token = prefs.getString("token");
+
+      if (token == null) {
+        throw Exception("Login expired");
+      }
+
+      final diet = DietModel(
+        id: widget.diet?.id ?? "",
+        clientId: selectedClient!.id,
+        trainerId: "",
+        title: titleController.text.trim(),
+        day: selectedDay,
+        meals: meals,
+        waterIntake: waterIntake,
+        notes: notesController.text.trim(),
+      );
+
+      if (widget.diet == null) {
+        await dietService.addDiet(token, diet);
+      } else {
+        await dietService.updateDiet(
+          token,
+          widget.diet!.id,
+          diet,
+        );
+      }
+
+      if (!mounted) return;
+
+      Navigator.pop(context, true);
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            widget.diet == null
+                ? "Diet Created Successfully"
+                : "Diet Updated Successfully",
+          ),
+          backgroundColor: Colors.green,
+        ),
+      );
+    } catch (e) {
+      setState(() {
+        loading = false;
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(e.toString()),
+        ),
       );
     }
-
-    if (!mounted) return;
-
-    Navigator.pop(context, true);
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          widget.diet == null
-              ? "Diet Created Successfully"
-              : "Diet Updated Successfully",
-        ),
-        backgroundColor: Colors.green,
-      ),
-    );
-  } catch (e) {
-    setState(() {
-      loading = false;
-    });
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(e.toString()),
-      ),
-    );
   }
-}
 
   Widget titleField() {
     return TextFormField(
       controller: titleController,
+      style: const TextStyle(color: Colors.white),
       validator: (value) {
         if (value == null || value.trim().isEmpty) {
           return "Diet title is required";
         }
         return null;
       },
-      decoration: InputDecoration(
-        labelText: "Diet Title",
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-      ),
+      decoration: _decoration("Diet Title"),
     );
   }
 

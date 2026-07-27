@@ -11,38 +11,66 @@ const {
   getClient,
   updateClient,
   deleteClient,
-} = require("../controllers/clientController");
-const {
+  updateBalance,
   getMyWorkouts,
   getMyDiets,
+  getMyProgress,
+  addMyProgress,
 } = require("../controllers/clientController");
 
-// Client-facing routes (client JWT, not trainer JWT) — must be
-// registered BEFORE the trainer authMiddleware gate below, otherwise
-// authMiddleware rejects the client's token trying to look it up as
-// a Trainer and these routes never get hit.
+/* ==========================================================
+   CLIENT APP ROUTES (Client Login)
+========================================================== */
+
 router.get(
   "/workouts",
   clientAuthMiddleware,
-  getMyWorkouts,
+  getMyWorkouts
 );
+
 router.get(
   "/diets",
   clientAuthMiddleware,
-  getMyDiets,
+  getMyDiets
 );
 
-// Trainer-facing routes below this line
+router.get(
+  "/progress",
+  clientAuthMiddleware,
+  getMyProgress
+);
+
+router.post(
+  "/progress",
+  clientAuthMiddleware,
+  addMyProgress
+);
+
+/* ==========================================================
+   TRAINER APP ROUTES
+========================================================== */
+
 router.use(authMiddleware);
 
+// Add Client
 router.post("/", addClient);
 
+// Get All Clients
 router.get("/", getClients);
 
+// Get Single Client
 router.get("/:id", getClient);
 
+// Update Client
 router.put("/:id", updateClient);
 
+// Update Client Balance
+router.put(
+  "/:id/update-balance",
+  updateBalance
+);
+
+// Delete Client
 router.delete("/:id", deleteClient);
 
 module.exports = router;

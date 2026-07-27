@@ -1,17 +1,27 @@
-import 'package:fit_coach/screens/chat/trainer_chat_screen.dart' show TrainerChatScreen;
+import 'package:fit_coach/screens/chat/trainer_chat_screen.dart'
+    show TrainerChatScreen;
 import 'package:fit_coach/screens/diet/client_diet_list_screen.dart'
     show ClientDietListScreen;
 import 'package:fit_coach/screens/progress/client_progress_list_screen.dart'
     show ClientProgressListScreen;
 import 'package:flutter/material.dart';
+import 'package:fit_coach/screens/clients/update_balance_screen.dart';
 
 import '../../models/client_model.dart';
 import '../workouts/client_workout_list_screen.dart';
+import 'edit_client_screen.dart';
 
-class ClientDetailsScreen extends StatelessWidget {
+class ClientDetailsScreen extends StatefulWidget {
   final ClientModel client;
 
   const ClientDetailsScreen({super.key, required this.client});
+
+  @override
+  State<ClientDetailsScreen> createState() => _ClientDetailsScreenState();
+}
+
+class _ClientDetailsScreenState extends State<ClientDetailsScreen> {
+  late ClientModel client = widget.client;
 
   Widget actionCard({
     required BuildContext context,
@@ -123,6 +133,44 @@ class ClientDetailsScreen extends StatelessWidget {
                         ),
                       ],
                     ),
+
+                    const SizedBox(height: 15),
+
+                    Row(
+                      children: [
+                        Expanded(
+                          child: infoTile(
+                            "Total Fees",
+                            "₹${client.totalFees.toStringAsFixed(0)}",
+                            valueColor: Colors.blue,
+                          ),
+                        ),
+                        Expanded(
+                          child: infoTile(
+                            "Amount Paid",
+                            "₹${client.amountPaid.toStringAsFixed(0)}",
+                            valueColor: Colors.green,
+                          ),
+                        ),
+                      ],
+                    ),
+
+                    const SizedBox(height: 15),
+
+                    Row(
+                      children: [
+                        Expanded(
+                          child: infoTile(
+                            "Balance Due",
+                            "₹${client.balanceDue.toStringAsFixed(0)}",
+                            valueColor: client.balanceDue > 0
+                                ? Colors.orange
+                                : Colors.green,
+                          ),
+                        ),
+                        const Expanded(child: SizedBox()),
+                      ],
+                    ),
                   ],
                 ),
               ),
@@ -179,17 +227,6 @@ class ClientDetailsScreen extends StatelessWidget {
 
             actionCard(
               context: context,
-              icon: Icons.payment,
-              title: "Payments",
-              subtitle: "Membership & Payments",
-              color: Colors.blue,
-              onTap: () {
-                comingSoon(context);
-              },
-            ),
-
-            actionCard(
-              context: context,
               icon: Icons.show_chart,
               title: "Progress",
               subtitle: "Weight & BMI Progress",
@@ -201,6 +238,27 @@ class ClientDetailsScreen extends StatelessWidget {
                     builder: (_) => ClientProgressListScreen(client: client),
                   ),
                 );
+              },
+            ),
+            actionCard(
+              context: context,
+              icon: Icons.account_balance_wallet,
+              title: "Update Balance",
+              subtitle: "Receive Payment & Update Balance",
+              color: Colors.indigo,
+              onTap: () async {
+                final updated = await Navigator.push<ClientModel>(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => UpdateBalanceScreen(client: client),
+                  ),
+                );
+
+                if (updated != null) {
+                  setState(() {
+                    client = updated;
+                  });
+                }
               },
             ),
 
@@ -219,10 +277,21 @@ class ClientDetailsScreen extends StatelessWidget {
               context: context,
               icon: Icons.edit,
               title: "Edit Client",
-              subtitle: "Update Client Information",
+              subtitle: "Update Client Information & Payments",
               color: Colors.teal,
-              onTap: () {
-                comingSoon(context);
+              onTap: () async {
+                final updated = await Navigator.push<ClientModel>(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => EditClientScreen(client: client),
+                  ),
+                );
+
+                if (updated != null) {
+                  setState(() {
+                    client = updated;
+                  });
+                }
               },
             ),
           ],
@@ -231,7 +300,7 @@ class ClientDetailsScreen extends StatelessWidget {
     );
   }
 
-  Widget infoTile(String title, String value) {
+  Widget infoTile(String title, String value, {Color? valueColor}) {
     return Card(
       elevation: 0,
       color: Colors.grey.shade100,
@@ -243,7 +312,7 @@ class ClientDetailsScreen extends StatelessWidget {
             const SizedBox(height: 6),
             Text(
               value,
-              style: const TextStyle(fontWeight: FontWeight.bold),
+              style: TextStyle(fontWeight: FontWeight.bold, color: valueColor),
               textAlign: TextAlign.center,
             ),
           ],
@@ -252,3 +321,4 @@ class ClientDetailsScreen extends StatelessWidget {
     );
   }
 }
+

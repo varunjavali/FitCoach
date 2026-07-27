@@ -281,6 +281,72 @@ class _TrainerChatScreenState
     }
   }
 
+  String _dateLabel(DateTime date) {
+    final now = DateTime.now();
+    final local = date.toLocal();
+    final today = DateTime(now.year, now.month, now.day);
+    final day = DateTime(local.year, local.month, local.day);
+    final diff = today.difference(day).inDays;
+
+    if (diff == 0) return "Today";
+    if (diff == 1) return "Yesterday";
+
+    const months = [
+      "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+      "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
+    ];
+    return "${months[local.month - 1]} ${local.day}, ${local.year}";
+  }
+
+  List<Widget> _buildTimeline() {
+    final widgets = <Widget>[];
+    DateTime? lastDate;
+
+    for (final msg in messages) {
+      final local = msg.createdAt.toLocal();
+      final day = DateTime(local.year, local.month, local.day);
+
+      if (lastDate == null || day != lastDate) {
+        widgets.add(
+          Center(
+            child: Container(
+              margin: const EdgeInsets.symmetric(vertical: 10),
+              padding: const EdgeInsets.symmetric(
+                horizontal: 12,
+                vertical: 4,
+              ),
+              decoration: BoxDecoration(
+                color: Colors.grey.shade200,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Text(
+                _dateLabel(msg.createdAt),
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Colors.grey.shade700,
+                ),
+              ),
+            ),
+          ),
+        );
+        lastDate = day;
+      }
+
+      widgets.add(
+        ChatBubble(
+          type: msg.type,
+          message: msg.text,
+          mediaUrl: msg.mediaUrl,
+          isMe: msg.sender == "trainer",
+          createdAt: msg.createdAt,
+          isRead: msg.isRead,
+        ),
+      );
+    }
+
+    return widgets;
+  }
+
   void scrollBottom() {
     Future.delayed(
       const Duration(milliseconds: 300),
@@ -333,20 +399,10 @@ class _TrainerChatScreenState
                       "No messages yet",
                     ),
                   )
-                : ListView.builder(
+                : ListView(
                     controller: scrollController,
                     padding: const EdgeInsets.all(10),
-                    itemCount: messages.length,
-                    itemBuilder: (_, index) {
-                      final msg = messages[index];
-
-                      return ChatBubble(
-                        type: msg.type,
-                        message: msg.text,
-                        mediaUrl: msg.mediaUrl,
-                        isMe: msg.sender == "trainer",
-                      );
-                    },
+                    children: _buildTimeline(),
                   ),
           ),
           MessageInput(

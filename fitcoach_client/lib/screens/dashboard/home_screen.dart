@@ -3,8 +3,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../models/dashboard_model.dart';
 import '../../services/dashboard_service.dart';
-import 'workout_screen.dart';
-import 'diet_screen.dart';
+import 'progress_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -41,23 +40,16 @@ class _HomeScreenState extends State<HomeScreen> {
 
       final data = await DashboardService().getDashboard(token);
 
-print(data.client.name);
-print(data.client.email);
-print(data.client.phone);
-
       setState(() {
         dashboard = data;
         loading = false;
       });
-    } catch (e, stack) {
-  debugPrint("Dashboard Error: $e");
-  debugPrint(stack.toString());
-
-  setState(() {
-    loading = false;
-    error = e.toString();
-  });
-}
+    } catch (e) {
+      setState(() {
+        loading = false;
+        error = e.toString();
+      });
+    }
   }
 
   double get bmi {
@@ -176,177 +168,169 @@ print(data.client.phone);
     );
   }
 
- 
-  
-
   @override
-Widget build(BuildContext context) {
-  if (loading) {
-    return const Scaffold(
-      body: Center(
-        child: CircularProgressIndicator(),
-      ),
-    );
-  }
+  Widget build(BuildContext context) {
+    if (loading) {
+      return const Scaffold(
+        body: Center(
+          child: CircularProgressIndicator(),
+        ),
+      );
+    }
 
-  if (error != null && error!.isNotEmpty)  {
+    if (error != null && error!.isNotEmpty) {
+      return Scaffold(
+        appBar: AppBar(
+          title: const Text("Fitness Equation"),
+        ),
+        body: Center(
+          child: Text(
+            error!,
+            style: const TextStyle(color: Colors.red),
+          ),
+        ),
+      );
+    }
+
     return Scaffold(
       appBar: AppBar(
-        title: const Text("FitCoach"),
+        title: const Text("Fitness Equation"),
+        centerTitle: true,
+        elevation: 0,
       ),
-      body: Center(
-        child: Text(
-          error!,
-          style: const TextStyle(color: Colors.red),
-        ),
-      ),
-    );
-  }
+      body: RefreshIndicator(
+        onRefresh: loadDashboard,
+        child: SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: const EdgeInsets.all(18),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(20),
+                  gradient: const LinearGradient(
+                    colors: [
+                      Colors.green,
+                      Colors.teal,
+                    ],
+                  ),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      "Welcome Back 👋",
+                      style: TextStyle(
+                        color: Colors.white70,
+                      ),
+                    ),
 
-  return Scaffold(
-    appBar: AppBar(
-      title: const Text("FitCoach"),
-      centerTitle: true,
-      elevation: 0,
-    ),
+                    const SizedBox(height: 8),
 
-    body: RefreshIndicator(
-      onRefresh: loadDashboard,
-      child: SingleChildScrollView(
-        physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.all(18),
+                    Text(
+                      dashboard!.client.name,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 30,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
 
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
+                    const SizedBox(height: 8),
 
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(20),
-                gradient: const LinearGradient(
-                  colors: [
-                    Colors.green,
-                    Colors.teal,
+                    Text(
+                      dashboard!.client.goal,
+                      style: const TextStyle(
+                        color: Colors.white70,
+                      ),
+                    ),
                   ],
                 ),
               ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+
+              const SizedBox(height: 25),
+
+              Row(
                 children: [
-
-                  const Text(
-                    "Welcome Back 👋",
-                    style: TextStyle(
-                      color: Colors.white70,
-                    ),
+                  statCard(
+                    "Weight",
+                    "${dashboard!.client.weight} kg",
+                    Colors.blue,
                   ),
 
-                  const SizedBox(height: 8),
+                  const SizedBox(width: 12),
 
-                  Text(
-                    dashboard!.client.name,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 30,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-
-                  const SizedBox(height: 8),
-
-                  Text(
-                    dashboard!.client.goal,
-                    style: const TextStyle(
-                      color: Colors.white70,
-                    ),
+                  statCard(
+                    "BMI",
+                    bmi.toStringAsFixed(1),
+                    Colors.orange,
                   ),
                 ],
               ),
-            ),
 
-            const SizedBox(height: 25),
+              const SizedBox(height: 12),
 
-            dashboardCard(
-              title: "Today's Workout",
-              subtitle: dashboard!.todayWorkout == null
-                  ? "No Workout Assigned"
-                  : "${dashboard!.todayWorkout!.title} · ${dashboard!.todayWorkout!.exerciseCount} exercises",
-              icon: Icons.fitness_center,
-              color: Colors.red,
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => const WorkoutScreen(),
+              Row(
+                children: [
+                  statCard(
+                    "Amount Paid",
+                    "₹${dashboard!.client.amountPaid.toStringAsFixed(0)}",
+                    Colors.green,
                   ),
-                );
-              },
-            ),
 
-            dashboardCard(
-              title: "Today's Diet",
-              subtitle: dashboard!.todayDiet == null
-                  ? "No Diet Assigned"
-                  : "${dashboard!.todayDiet!.title} · ${dashboard!.todayDiet!.calories} Calories",
-              icon: Icons.restaurant,
-              color: Colors.green,
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => const DietScreen(),
+                  const SizedBox(width: 12),
+
+                  statCard(
+                    "Balance Due",
+                    "₹${dashboard!.client.balanceDue.toStringAsFixed(0)}",
+                    dashboard!.client.balanceDue > 0
+                        ? Colors.redAccent
+                        : Colors.grey,
                   ),
-                );
-              },
-            ),
+                ],
+              ),
 
-            const SizedBox(height: 20),
+              const SizedBox(height: 20),
 
-            Row(
-              children: [
+              dashboardCard(
+                title: "My Progress",
+                subtitle: "Weight trend, photos & history",
+                icon: Icons.show_chart,
+                color: Colors.teal,
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const ProgressScreen(),
+                    ),
+                  );
+                },
+              ),
 
-                statCard(
-                  "Weight",
-                  "${dashboard!.client.weight} kg",
-                  Colors.blue,
-                ),
+              dashboardCard(
+                title: "Membership",
+                subtitle: dashboard!.membership == null
+                    ? "No Membership"
+                    : dashboard!.membership!.plan,
+                icon: Icons.workspace_premium,
+                color: Colors.amber,
+              ),
 
-                const SizedBox(width: 12),
+              dashboardCard(
+                title: "Goal",
+                subtitle: dashboard!.client.goal,
+                icon: Icons.flag,
+                color: Colors.green,
+              ),
 
-                statCard(
-                  "BMI",
-                  bmi.toStringAsFixed(1),
-                  Colors.orange,
-                ),
-              ],
-            ),
-
-            const SizedBox(height: 20),
-
-            dashboardCard(
-              title: "Membership",
-              subtitle: dashboard!.membership == null
-                  ? "No Membership"
-                  : dashboard!.membership!.plan,
-              icon: Icons.workspace_premium,
-              color: Colors.amber,
-            ),
-
-           
-            dashboardCard(
-              title: "Goal",
-              subtitle: dashboard!.client.goal,
-              icon: Icons.flag,
-              color: Colors.green,
-            ),
-
-            const SizedBox(height: 30),
-          ],
+              const SizedBox(height: 30),
+            ],
+          ),
         ),
       ),
-    ),
-  );
-}
+    );
+  }
 }

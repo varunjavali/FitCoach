@@ -1,14 +1,9 @@
-import 'dart:async';
-import 'dart:io';
+import 'dart:ui';
 
-import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
-import 'package:image_picker/image_picker.dart';
-import 'package:path_provider/path_provider.dart';
-import 'package:record/record.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import '../../config/api_constants.dart';
 import '../../models/chat_model.dart';
 import '../../services/chat_service.dart';
 import '../../services/socket_service.dart';
@@ -27,8 +22,6 @@ class _ClientChatScreenState
     extends State<ClientChatScreen> {
   final SocketService socket = SocketService();
   final ChatService chatService = ChatService();
-  final ImagePicker _picker = ImagePicker();
-  final AudioRecorder _audioRecorder = AudioRecorder();
 
   final TextEditingController messageController =
       TextEditingController();
@@ -41,16 +34,23 @@ class _ClientChatScreenState
   String trainerId = "";
   String clientId = "";
 
-  bool _isRecording = false;
-  bool _isUploading = false;
-  Duration _recordingDuration = Duration.zero;
-  Timer? _recordingTimer;
+ 
+  static const _bgGradient = LinearGradient(
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+    colors: [
+      Color(0xff0F2027),
+      Color(0xff203A43),
+      Color(0xff2C5364),
+    ],
+  );
+
+  static final _accent = Colors.greenAccent.shade400;
 
   @override
   void initState() {
     super.initState();
 
-    // Rebuilds the send/mic icon in MessageInput as the user types.
     messageController.addListener(() => setState(() {}));
 
     socket.connect();
@@ -60,6 +60,7 @@ class _ClientChatScreenState
     });
 
     socket.listen((data) {
+      if (data["sender"] == "client") return;
       setState(() {
         messages.add(ChatModel.fromJson(data));
       });
@@ -107,179 +108,100 @@ class _ClientChatScreenState
       return;
     }
 
+    final text = messageController.text.trim();
+
+    // Optimistic UI: show the message immediately, don't wait for
+    // the server round-trip.
+    setState(() {
+      messages.add(
+        ChatModel(
+          sender: "client",
+          type: "text",
+          text: text,
+          createdAt: DateTime.now(),
+          isRead: false,
+        ),
+      );
+    });
+
     socket.sendMessage(
       trainerId: trainerId,
       clientId: clientId,
       sender: "client",
-      text: messageController.text.trim(),
+      text: text,
       type: "text",
     );
 
     messageController.clear();
+    scrollBottom();
   }
 
-  Future<String?> _getToken() async {
-    final prefs = await SharedPreferences.getInstance();
-    return prefs.getString("clientToken");
+  String _dateLabel(DateTime date) {
+    final now = DateTime.now();
+    final local = date.toLocal();
+    final today = DateTime(now.year, now.month, now.day);
+    final day = DateTime(local.year, local.month, local.day);
+    final diff = today.difference(day).inDays;
+
+    if (diff == 0) return "Today";
+    if (diff == 1) return "Yesterday";
+
+    const months = [
+      "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+      "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
+    ];
+    return "${months[local.month - 1]} ${local.day}, ${local.year}";
   }
 
-  Future<void> _sendMediaFile(File file, String type) async {
-    final token = await _getToken();
-    if (token == null) return;
+  List<Widget> _buildTimeline() {
+    final widgets = <Widget>[];
+    DateTime? lastDate;
 
-    setState(() => _isUploading = true);
+    for (final msg in messages) {
+      final local = msg.createdAt.toLocal();
+      final day = DateTime(local.year, local.month, local.day);
 
-    try {
-      final relativeUrl =
-          await chatService.uploadMedia(token, file.path);
-
-      final fullUrl =
-          "${ApiConstants.mediaBaseUrl}$relativeUrl";
-
-      socket.sendMessage(
-        trainerId: trainerId,
-        clientId: clientId,
-        sender: "client",
-        type: type,
-        mediaUrl: fullUrl,
-      );
-
-      scrollBottom();
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text("Failed to send: ${e.toString()}"),
+      if (lastDate == null || day != lastDate) {
+        widgets.add(
+          Center(
+            child: Container(
+              margin: const EdgeInsets.symmetric(vertical: 10),
+              padding: const EdgeInsets.symmetric(
+                horizontal: 14,
+                vertical: 5,
+              ),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(.10),
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: Colors.white.withOpacity(.15)),
+              ),
+              child: Text(
+                _dateLabel(msg.createdAt),
+                style: GoogleFonts.poppins(
+                  fontSize: 12,
+                  color: Colors.white70,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ),
           ),
         );
-      }
-    } finally {
-      if (mounted) setState(() => _isUploading = false);
-    }
-  }
-
-  Future<void> _pickAndSendImage(ImageSource source) async {
-    final XFile? file = await _picker.pickImage(
-      source: source,
-      imageQuality: 80,
-    );
-    if (file == null) return;
-    await _sendMediaFile(File(file.path), "image");
-  }
-
-  Future<void> _pickAndSendVideo(ImageSource source) async {
-    final XFile? file = await _picker.pickVideo(source: source);
-    if (file == null) return;
-    await _sendMediaFile(File(file.path), "video");
-  }
-
-  void _showAttachmentSheet() {
-    if (kIsWeb) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            "Photo/video sending isn't supported in the web preview. Run on Android/iOS to use it.",
-          ),
-        ),
-      );
-      return;
-    }
-
-    showModalBottomSheet(
-      context: context,
-      builder: (_) => SafeArea(
-        child: Wrap(
-          children: [
-            ListTile(
-              leading: const Icon(Icons.photo_camera),
-              title: const Text("Camera"),
-              onTap: () {
-                Navigator.pop(context);
-                _pickAndSendImage(ImageSource.camera);
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.photo_library),
-              title: const Text("Photo from Gallery"),
-              onTap: () {
-                Navigator.pop(context);
-                _pickAndSendImage(ImageSource.gallery);
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.videocam),
-              title: const Text("Video from Gallery"),
-              onTap: () {
-                Navigator.pop(context);
-                _pickAndSendVideo(ImageSource.gallery);
-              },
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Future<void> _toggleRecording() async {
-    if (kIsWeb) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            "Voice messages aren't supported in the web preview. Run on Android/iOS to use it.",
-          ),
-        ),
-      );
-      return;
-    }
-
-    if (_isRecording) {
-      final path = await _audioRecorder.stop();
-      _recordingTimer?.cancel();
-
-      setState(() {
-        _isRecording = false;
-        _recordingDuration = Duration.zero;
-      });
-
-      if (path != null) {
-        await _sendMediaFile(File(path), "audio");
-      }
-    } else {
-      final hasPermission = await _audioRecorder.hasPermission();
-      if (!hasPermission) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text("Microphone permission is required"),
-            ),
-          );
-        }
-        return;
+        lastDate = day;
       }
 
-      final dir = await getTemporaryDirectory();
-      final filePath =
-          "${dir.path}/voice_${DateTime.now().millisecondsSinceEpoch}.m4a";
-
-      await _audioRecorder.start(
-        const RecordConfig(encoder: AudioEncoder.aacLc),
-        path: filePath,
-      );
-
-      setState(() {
-        _isRecording = true;
-        _recordingDuration = Duration.zero;
-      });
-
-      _recordingTimer = Timer.periodic(
-        const Duration(seconds: 1),
-        (_) {
-          setState(() {
-            _recordingDuration += const Duration(seconds: 1);
-          });
-        },
+      widgets.add(
+        ChatBubble(
+          type: msg.type,
+          message: msg.text,
+          mediaUrl: msg.mediaUrl,
+          isMe: msg.sender == "client",
+          createdAt: msg.createdAt,
+          isRead: msg.isRead,
+        ),
       );
     }
+
+    return widgets;
   }
 
   void scrollBottom() {
@@ -305,52 +227,174 @@ class _ClientChatScreenState
     socket.disconnect();
     messageController.dispose();
     scrollController.dispose();
-    _recordingTimer?.cancel();
-    _audioRecorder.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text("Chat with Trainer"),
-      ),
-      body: Column(
-        children: [
-          if (_isUploading)
-            const LinearProgressIndicator(minHeight: 2),
-          Expanded(
-            child: messages.isEmpty
-                ? const Center(
-                    child: Text("No messages"),
-                  )
-                : ListView.builder(
-                    controller: scrollController,
-                    padding:
-                        const EdgeInsets.all(10),
-                    itemCount: messages.length,
-                    itemBuilder: (_, index) {
-                      final msg =
-                          messages[index];
+      extendBodyBehindAppBar: true,
 
-                      return ChatBubble(
-                        type: msg.type,
-                        message: msg.text,
-                        mediaUrl: msg.mediaUrl,
-                        isMe:
-                            msg.sender == "client",
-                      );
-                    },
+      //-------------------------------------------------
+      // Glass AppBar
+      //-------------------------------------------------
+
+      appBar: PreferredSize(
+        preferredSize: const Size.fromHeight(kToolbarHeight),
+        child: ClipRRect(
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
+            child: AppBar(
+              backgroundColor: Colors.white.withOpacity(.08),
+              elevation: 0,
+              scrolledUnderElevation: 0,
+              iconTheme: const IconThemeData(color: Colors.white),
+              title: Row(
+                children: [
+                  Container(
+                    width: 38,
+                    height: 38,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: Colors.white.withOpacity(.12),
+                      border: Border.all(color: Colors.white24),
+                    ),
+                    child: const Icon(
+                      Icons.person,
+                      color: Colors.white,
+                      size: 20,
+                    ),
                   ),
+                  const SizedBox(width: 12),
+                  Text(
+                    "Chat with Trainer",
+                    style: GoogleFonts.poppins(
+                      color: Colors.white,
+                      fontSize: 17,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ),
-          MessageInput(
-            controller: messageController,
-            onSend: sendMessage,
-            onAttachmentTap: _showAttachmentSheet,
-            onMicTap: _toggleRecording,
-            isRecording: _isRecording,
-            recordingDuration: _recordingDuration,
+        ),
+      ),
+
+      body: Stack(
+        children: [
+
+          //-------------------------------------------------
+          // Background gradient + soft decorative glow
+          //-------------------------------------------------
+
+          Container(
+            width: double.infinity,
+            height: double.infinity,
+            decoration: const BoxDecoration(gradient: _bgGradient),
+          ),
+
+          Positioned(
+            top: -90,
+            right: -70,
+            child: Container(
+              width: 200,
+              height: 200,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: Colors.white.withOpacity(0.06),
+              ),
+            ),
+          ),
+
+          Positioned(
+            bottom: -100,
+            left: -80,
+            child: Container(
+              width: 240,
+              height: 240,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: Colors.white.withOpacity(0.05),
+              ),
+            ),
+          ),
+
+          //-------------------------------------------------
+          // Chat content
+          //-------------------------------------------------
+
+          SafeArea(
+            child: Column(
+              children: [
+                SizedBox(height: kToolbarHeight - 8),
+
+                Expanded(
+                  child: messages.isEmpty
+                      ? Center(
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Container(
+                                width: 70,
+                                height: 70,
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  color: Colors.white.withOpacity(.08),
+                                ),
+                                child: const Icon(
+                                  Icons.chat_bubble_outline,
+                                  color: Colors.white54,
+                                  size: 32,
+                                ),
+                              ),
+                              const SizedBox(height: 14),
+                              Text(
+                                "No messages yet",
+                                style: GoogleFonts.poppins(
+                                  color: Colors.white70,
+                                  fontSize: 14,
+                                ),
+                              ),
+                            ],
+                          ),
+                        )
+                      : ListView(
+                          controller: scrollController,
+                          padding: const EdgeInsets.all(10),
+                          children: _buildTimeline(),
+                        ),
+                ),
+
+                //-------------------------------------------------
+                // Glass input bar wrapper
+                //-------------------------------------------------
+
+                ClipRRect(
+                  child: BackdropFilter(
+                    filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 6,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(.06),
+                        border: Border(
+                          top: BorderSide(
+                            color: Colors.white.withOpacity(.12),
+                          ),
+                        ),
+                      ),
+                      child: MessageInput(
+                        controller: messageController,
+                        onSend: sendMessage,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
         ],
       ),

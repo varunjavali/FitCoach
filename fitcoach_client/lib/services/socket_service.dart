@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:socket_io_client/socket_io_client.dart' as IO;
 
+import '../config/api_constants.dart';
+
 class SocketService {
   SocketService._internal();
 
-  static final SocketService _instance =
-      SocketService._internal();
+  static final SocketService _instance = SocketService._internal();
 
   factory SocketService() => _instance;
 
@@ -17,7 +18,7 @@ class SocketService {
     if (connected) return;
 
     socket = IO.io(
-      "http://localhost:5000",
+      ApiConstants.mediaBaseUrl,
       IO.OptionBuilder()
           .setTransports(["websocket"])
           .disableAutoConnect()
@@ -29,49 +30,18 @@ class SocketService {
       print("✅ Socket Connected");
     });
 
-    socket.onDisconnect((_) {
-      connected = false;
-      print("❌ Socket Disconnected");
-    });
-
-    socket.onConnectError((data) {
-      print("❌ Connect Error: $data");
-    });
-
-    socket.onError((data) {
-      print("❌ Socket Error: $data");
-    });
-
     socket.connect();
   }
 
-  void onConnected(VoidCallback callback) {
-    if (connected) {
-      callback();
-      return;
-    }
-
-    socket.onConnect((_) {
-      connected = true;
-      callback();
-    });
+  void onConnected(void Function() callback) {
+    socket.onConnect((_) => callback());
   }
 
-  void joinConversation(
-    String trainerId,
-    String clientId,
-  ) {
-    print("Joining Room...");
-    print("Trainer : $trainerId");
-    print("Client  : $clientId");
-
-    socket.emit(
-      "joinConversation",
-      {
-        "trainerId": trainerId,
-        "clientId": clientId,
-      },
-    );
+  void joinConversation(String trainerId, String clientId) {
+    socket.emit("joinConversation", {
+      "trainerId": trainerId,
+      "clientId": clientId,
+    });
   }
 
   void sendMessage({
@@ -95,16 +65,9 @@ class SocketService {
     );
   }
 
-  void listen(Function(dynamic data) callback) {
-  socket.off("newMessage");
-
-  socket.on("newMessage", (data) {
-    print("📩 NEW MESSAGE RECEIVED");
-    print(data);
-
-    callback(data);
-  });
-}
+  void listen(void Function(dynamic data) callback) {
+    socket.on("newMessage", (data) => callback(data));
+  }
 
   void disconnect() {
     socket.disconnect();

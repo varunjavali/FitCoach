@@ -12,6 +12,10 @@ class ClientModel {
   final String? medicalHistory;
   final String? notes;
 
+  final double totalFees;
+  final double amountPaid;
+  final double balanceDue;
+
   ClientModel({
     required this.id,
     required this.name,
@@ -25,6 +29,9 @@ class ClientModel {
     this.joiningDate,
     this.medicalHistory,
     this.notes,
+    this.totalFees = 0,
+    this.amountPaid = 0,
+    this.balanceDue = 0,
   });
 
   factory ClientModel.fromJson(Map<String, dynamic> json) {
@@ -47,6 +54,15 @@ class ClientModel {
           : DateTime.parse(json["joiningDate"]),
       medicalHistory: json["medicalHistory"],
       notes: json["notes"],
+      totalFees: json["totalFees"] == null
+          ? 0
+          : (json["totalFees"] as num).toDouble(),
+      amountPaid: json["amountPaid"] == null
+          ? 0
+          : (json["amountPaid"] as num).toDouble(),
+      balanceDue: json["balanceDue"] == null
+          ? 0
+          : (json["balanceDue"] as num).toDouble(),
     );
   }
 
@@ -63,6 +79,9 @@ class ClientModel {
       "joiningDate": joiningDate?.toIso8601String(),
       "medicalHistory": medicalHistory,
       "notes": notes,
+      "totalFees": totalFees,
+      "amountPaid": amountPaid,
+      "balanceDue": balanceDue,
     };
   }
 }

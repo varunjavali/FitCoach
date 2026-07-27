@@ -123,8 +123,8 @@ class _ClientListScreenState extends State<ClientListScreen> {
   return Card(
     margin: const EdgeInsets.only(bottom: 15),
     child: ListTile(
-      onTap: () {
-        Navigator.push(
+      onTap: () async {
+        await Navigator.push(
           context,
           MaterialPageRoute(
             builder: (_) => ClientDetailsScreen(
@@ -132,6 +132,8 @@ class _ClientListScreenState extends State<ClientListScreen> {
             ),
           ),
         );
+
+        loadClients();
       },
       leading: const CircleAvatar(
         child: Icon(Icons.person),

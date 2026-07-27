@@ -25,20 +25,26 @@ subprojects {
 // exact version isn't installed and can't be auto-downloaded (offline /
 // blocked network), the build fails. This forces every sub-project onto
 // the NDK version we already have installed locally.
-subprojects {
-    afterEvaluate {
-        val androidExt = extensions.findByName("android")
-        if (androidExt != null) {
-            try {
-                androidExt.javaClass
-                    .getMethod("setNdkVersion", String::class.java)
-                    .invoke(androidExt, "27.0.12077973")
-            } catch (e: Exception) {
-                // Sub-project has no ndkVersion property (doesn't use
-                // native code) — nothing to do.
-            }
-        }
+//
+// Uses plugins.withId (fires as soon as the Android plugin is applied)
+// instead of afterEvaluate, since evaluationDependsOn(":app") above can
+// cause ":app" to already be evaluated by the time a later afterEvaluate
+// block runs, which Gradle rejects.
+fun setNdkVersionSafely(project: Project) {
+    val androidExt = project.extensions.findByName("android") ?: return
+    try {
+        androidExt.javaClass
+            .getMethod("setNdkVersion", String::class.java)
+            .invoke(androidExt, "27.0.12077973")
+    } catch (e: Exception) {
+        // Sub-project has no ndkVersion property (doesn't use native
+        // code) — nothing to do.
     }
+}
+
+subprojects {
+    plugins.withId("com.android.application") { setNdkVersionSafely(project) }
+    plugins.withId("com.android.library") { setNdkVersionSafely(project) }
 }
 
 tasks.register<Delete>("clean") {

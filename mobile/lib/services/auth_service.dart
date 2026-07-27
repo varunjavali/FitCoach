@@ -22,9 +22,10 @@ class AuthService {
           e.type == DioExceptionType.connectionTimeout ||
           e.type == DioExceptionType.receiveTimeout) {
         throw Exception(
-          "Could not reach the server. Check that the backend "
-          "is running and that ApiConstants.baseUrl points to "
-          "your computer's IP address, not localhost.",
+          "Could not reach the server. Check your internet "
+          "connection, or the backend may be waking up from "
+          "sleep (free Render instances take ~30-60s to start "
+          "after being idle) — try again in a moment.",
         );
       }
 

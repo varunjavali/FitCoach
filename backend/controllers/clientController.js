@@ -1,12 +1,30 @@
 const Client = require("../models/Client");
+const Workout = require("../models/Workout");
+const Diet = require("../models/Diet");
+const Progress = require("../models/Progress");
 const bcrypt = require("bcryptjs");
 
+// ==========================
 // Add Client
+// ==========================
 exports.addClient = async (req, res) => {
   try {
-    const { name, email, phone, age, gender, height, weight, goal, medicalHistory, notes } = req.body;
+    const {
+      name,
+      email,
+      phone,
+      age,
+      gender,
+      height,
+      weight,
+      goal,
+      medicalHistory,
+      notes,
+      totalFees,
+      amountPaid,
+      balanceDue,
+    } = req.body;
 
-    // Check if email already exists
     const existingClient = await Client.findOne({
       email: email.toLowerCase(),
     });
@@ -17,10 +35,7 @@ exports.addClient = async (req, res) => {
       });
     }
 
-    // Temporary password
     const tempPassword = "Fit@1234";
-
-    // Hash password
     const hashedPassword = await bcrypt.hash(tempPassword, 10);
 
     const client = await Client.create({
@@ -36,6 +51,9 @@ exports.addClient = async (req, res) => {
       goal,
       medicalHistory,
       notes,
+      totalFees: totalFees || 0,
+      amountPaid: amountPaid || 0,
+      balanceDue: balanceDue || 0,
       isFirstLogin: true,
     });
 
@@ -44,7 +62,6 @@ exports.addClient = async (req, res) => {
       temporaryPassword: tempPassword,
       client,
     });
-
   } catch (err) {
     res.status(500).json({
       message: err.message,
@@ -52,7 +69,9 @@ exports.addClient = async (req, res) => {
   }
 };
 
+// ==========================
 // Get All Clients
+// ==========================
 exports.getClients = async (req, res) => {
   try {
     const clients = await Client.find({
@@ -61,11 +80,15 @@ exports.getClients = async (req, res) => {
 
     res.json(clients);
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    res.status(500).json({
+      message: err.message,
+    });
   }
 };
 
+// ==========================
 // Get Single Client
+// ==========================
 exports.getClient = async (req, res) => {
   try {
     const client = await Client.findOne({
@@ -81,11 +104,15 @@ exports.getClient = async (req, res) => {
 
     res.json(client);
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    res.status(500).json({
+      message: err.message,
+    });
   }
 };
 
+// ==========================
 // Update Client
+// ==========================
 exports.updateClient = async (req, res) => {
   try {
     const client = await Client.findOneAndUpdate(
@@ -110,11 +137,60 @@ exports.updateClient = async (req, res) => {
       client,
     });
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    res.status(500).json({
+      message: err.message,
+    });
   }
 };
 
+// ==========================
+// Update Balance
+// ==========================
+exports.updateBalance = async (req, res) => {
+  try {
+    const { amount } = req.body;
+
+    const client = await Client.findOne({
+      _id: req.params.id,
+      trainer: req.trainer._id,
+    });
+
+    if (!client) {
+      return res.status(404).json({
+        message: "Client not found",
+      });
+    }
+
+    const receiveAmount = Number(amount);
+
+    if (isNaN(receiveAmount) || receiveAmount <= 0) {
+      return res.status(400).json({
+        message: "Please enter a valid amount",
+      });
+    }
+
+    if (receiveAmount > client.balanceDue) {
+      return res.status(400).json({
+        message: "Amount exceeds balance due",
+      });
+    }
+
+    client.amountPaid += receiveAmount;
+    client.balanceDue = client.totalFees - client.amountPaid;
+
+    await client.save();
+
+    res.json(client);
+  } catch (err) {
+    res.status(500).json({
+      message: err.message,
+    });
+  }
+};
+
+// ==========================
 // Delete Client
+// ==========================
 exports.deleteClient = async (req, res) => {
   try {
     const client = await Client.findOneAndDelete({
@@ -132,13 +208,15 @@ exports.deleteClient = async (req, res) => {
       message: "Client deleted successfully",
     });
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    res.status(500).json({
+      message: err.message,
+    });
   }
 };
-const Workout = require("../models/Workout");
-const Diet = require("../models/Diet");
 
-// Get Logged-in Client Workouts
+// ==========================
+// Client Workouts
+// ==========================
 exports.getMyWorkouts = async (req, res) => {
   try {
     const workouts = await Workout.find({
@@ -155,7 +233,9 @@ exports.getMyWorkouts = async (req, res) => {
   }
 };
 
-// Get Logged-in Client Diets
+// ==========================
+// Client Diets
+// ==========================
 exports.getMyDiets = async (req, res) => {
   try {
     const diets = await Diet.find({
@@ -165,6 +245,82 @@ exports.getMyDiets = async (req, res) => {
     });
 
     res.json(diets);
+  } catch (err) {
+    res.status(500).json({
+      message: err.message,
+    });
+  }
+};
+
+// ==========================
+// Client Progress
+// ==========================
+exports.getMyProgress = async (req, res) => {
+  try {
+    const progress = await Progress.find({
+      client: req.client._id,
+    }).sort({
+      date: -1,
+    });
+
+    res.json(progress);
+  } catch (err) {
+    res.status(500).json({
+      message: err.message,
+    });
+  }
+};
+
+// ==========================
+// Add Client Progress
+// ==========================
+exports.addMyProgress = async (req, res) => {
+  try {
+    const {
+      weight,
+      height,
+      notes,
+      photo,
+      date,
+    } = req.body;
+
+    if (!weight) {
+      return res.status(400).json({
+        message: "Weight is required",
+      });
+    }
+
+    const effectiveHeight =
+      height || req.client.height || 0;
+
+    let bmi = 0;
+
+    if (effectiveHeight) {
+      const heightInMeters = effectiveHeight / 100;
+
+      bmi = Number(
+        (
+          weight /
+          (heightInMeters * heightInMeters)
+        ).toFixed(1)
+      );
+    }
+
+    const progress = await Progress.create({
+      trainer: req.client.trainer,
+      client: req.client._id,
+      date: date || Date.now(),
+      weight,
+      height: effectiveHeight,
+      bmi,
+      notes: notes || "",
+      photo: photo || "",
+    });
+
+    res.status(201).json({
+      message: "Progress logged successfully",
+      progress,
+    });
   } catch (err) {
     res.status(500).json({
       message: err.message,

@@ -85,7 +85,25 @@ const clientSchema = new mongoose.Schema(
       type: Boolean,
       default: true,
     },
+    totalFees: {
+      type: Number,
+      default: 0,
+  },
+  
+  amountPaid: {
+      type: Number,
+      default: 0,
+  },
+  
+  balanceDue: {
+      type: Number,
+      default: 0,
+  },
 
+    lastLogin: {
+      type: Date,
+      default: null,
+    },
 
     lastLogin: {
       type: Date,
@@ -96,6 +114,7 @@ const clientSchema = new mongoose.Schema(
   {
     timestamps: true,
   }
+  
 );
 
 module.exports = mongoose.model("Client", clientSchema);

@@ -94,6 +94,33 @@ class ClientService {
     }
   }
 
+  /// Update Balance
+  Future<ClientModel> updateBalance(
+    String token,
+    String clientId,
+    double amount,
+  ) async {
+    try {
+      final response = await ApiService.dio.put(
+        "/clients/$clientId/update-balance",
+        data: {
+          "amount": amount,
+        },
+        options: Options(
+          headers: {
+            "Authorization": "Bearer $token",
+          },
+        ),
+      );
+
+      return ClientModel.fromJson(response.data);
+    } on DioException catch (e) {
+      throw Exception(
+        e.response?.data["message"] ?? "Failed to update balance",
+      );
+    }
+  }
+
   /// Delete client
   Future<void> deleteClient(
     String token,
