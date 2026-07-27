@@ -68,6 +68,9 @@ exports.getDashboard = async (req, res) => {
         weight: client.weight,
         goal: client.goal,
         joiningDate: client.joiningDate,
+        
+      
+        totalFees: client.totalFees,
         amountPaid: client.amountPaid,
         balanceDue: client.balanceDue,
       },

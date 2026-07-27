@@ -38,6 +38,9 @@ class Client {
   final double weight;
   final String goal;
   final DateTime? joiningDate;
+  final double totalFees;
+  final double amountPaid;
+  final double balanceDue;
 
   Client({
     required this.id,
@@ -49,6 +52,10 @@ class Client {
     required this.height,
     required this.weight,
     required this.goal,
+    required this.totalFees,
+    required this.amountPaid,
+    required this.balanceDue,
+
     this.joiningDate,
   });
 
@@ -63,6 +70,9 @@ class Client {
       height: (json["height"] ?? 0).toDouble(),
       weight: (json["weight"] ?? 0).toDouble(),
       goal: json["goal"] ?? "",
+         totalFees: (json["totalFees"] ?? 0).toDouble(),
+    amountPaid: (json["amountPaid"] ?? 0).toDouble(),
+    balanceDue: (json["balanceDue"] ?? 0).toDouble(),
       joiningDate: json["joiningDate"] == null
           ? null
           : DateTime.tryParse(json["joiningDate"]),
@@ -95,11 +105,7 @@ class TodayDiet {
   final String title;
   final int calories;
 
-  TodayDiet({
-    required this.id,
-    required this.title,
-    required this.calories,
-  });
+  TodayDiet({required this.id, required this.title, required this.calories});
 
   factory TodayDiet.fromJson(Map<String, dynamic> json) {
     return TodayDiet(
@@ -113,13 +119,9 @@ class TodayDiet {
 class Membership {
   final String plan;
 
-  Membership({
-    required this.plan,
-  });
+  Membership({required this.plan});
 
   factory Membership.fromJson(Map<String, dynamic> json) {
-    return Membership(
-      plan: json["plan"] ?? "",
-    );
+    return Membership(plan: json["plan"] ?? "");
   }
 }

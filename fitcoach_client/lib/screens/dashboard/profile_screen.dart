@@ -29,11 +29,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   static const _bgGradient = LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
-    colors: [
-      Color(0xff0F2027),
-      Color(0xff203A43),
-      Color(0xff2C5364),
-    ],
+    colors: [Color(0xff0F2027), Color(0xff203A43), Color(0xff2C5364)],
   );
 
   static final _accent = Colors.greenAccent.shade400;
@@ -153,9 +149,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
     Navigator.pushAndRemoveUntil(
       context,
-      MaterialPageRoute(
-        builder: (_) => const LoginScreen(),
-      ),
+      MaterialPageRoute(builder: (_) => const LoginScreen()),
       (route) => false,
     );
   }
@@ -163,8 +157,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
   String formatDate(DateTime? date) {
     if (date == null) return "-";
     const months = [
-      "Jan", "Feb", "Mar", "Apr", "May", "Jun",
-      "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
+      "Jan",
+      "Feb",
+      "Mar",
+      "Apr",
+      "May",
+      "Jun",
+      "Jul",
+      "Aug",
+      "Sep",
+      "Oct",
+      "Nov",
+      "Dec",
     ];
     return "${date.day} ${months[date.month - 1]} ${date.year}";
   }
@@ -215,10 +219,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       ),
       title: Text(
         label,
-        style: GoogleFonts.poppins(
-          color: Colors.white60,
-          fontSize: 13,
-        ),
+        style: GoogleFonts.poppins(color: Colors.white60, fontSize: 13),
       ),
       subtitle: Text(
         value,
@@ -262,7 +263,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
-
     //-------------------------------------------------
     // Loading state
     //-------------------------------------------------
@@ -271,9 +271,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       return Scaffold(
         body: Container(
           decoration: const BoxDecoration(gradient: _bgGradient),
-          child: Center(
-            child: CircularProgressIndicator(color: _accent),
-          ),
+          child: Center(child: CircularProgressIndicator(color: _accent)),
         ),
       );
     }
@@ -332,7 +330,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
       appBar: _glassAppBar("Profile"),
       body: Stack(
         children: [
-
           Container(
             width: double.infinity,
             height: double.infinity,
@@ -372,20 +369,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
               backgroundColor: const Color(0xff203A43),
               child: SingleChildScrollView(
                 physics: const AlwaysScrollableScrollPhysics(),
-                padding: EdgeInsets.fromLTRB(
-                  18,
-                  kToolbarHeight + 10,
-                  18,
-                  20,
-                ),
+                padding: EdgeInsets.fromLTRB(18, kToolbarHeight + 10, 18, 20),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-
                     //-------------------------------------------------
                     // Avatar + name
                     //-------------------------------------------------
-
                     Center(
                       child: Column(
                         children: [
@@ -439,7 +429,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     //-------------------------------------------------
                     // Info card
                     //-------------------------------------------------
-
                     _glassCard(
                       child: Column(
                         children: [
@@ -448,37 +437,82 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             label: "Phone",
                             value: client.phone.isEmpty ? "-" : client.phone,
                           ),
-                          Divider(height: 1, color: Colors.white.withOpacity(.12)),
+                          Divider(
+                            height: 1,
+                            color: Colors.white.withOpacity(.12),
+                          ),
                           infoTile(
                             icon: Icons.cake,
                             label: "Age",
                             value: client.age == 0 ? "-" : "${client.age} yrs",
                           ),
-                          Divider(height: 1, color: Colors.white.withOpacity(.12)),
+                          Divider(
+                            height: 1,
+                            color: Colors.white.withOpacity(.12),
+                          ),
                           infoTile(
                             icon: Icons.wc,
                             label: "Gender",
                             value: client.gender.isEmpty ? "-" : client.gender,
                           ),
-                          Divider(height: 1, color: Colors.white.withOpacity(.12)),
+                          Divider(
+                            height: 1,
+                            color: Colors.white.withOpacity(.12),
+                          ),
                           infoTile(
                             icon: Icons.height,
                             label: "Height",
                             value: "${client.height} cm",
                           ),
-                          Divider(height: 1, color: Colors.white.withOpacity(.12)),
+                          Divider(
+                            height: 1,
+                            color: Colors.white.withOpacity(.12),
+                          ),
                           infoTile(
                             icon: Icons.monitor_weight,
                             label: "Weight",
                             value: "${client.weight} kg",
                           ),
-                          Divider(height: 1, color: Colors.white.withOpacity(.12)),
+                          Divider(
+                            height: 1,
+                            color: Colors.white.withOpacity(.12),
+                          ),
                           infoTile(
                             icon: Icons.flag,
                             label: "Goal",
                             value: client.goal.isEmpty ? "-" : client.goal,
                           ),
-                          Divider(height: 1, color: Colors.white.withOpacity(.12)),
+                          infoTile(
+                            icon: Icons.currency_rupee,
+                            label: "Total Fees",
+                            value: "₹${client.totalFees.toStringAsFixed(0)}",
+                          ),
+
+                          Divider(
+                            height: 1,
+                            color: Colors.white.withOpacity(.12),
+                          ),
+
+                          infoTile(
+                            icon: Icons.check_circle,
+                            label: "Amount Paid",
+                            value: "₹${client.amountPaid.toStringAsFixed(0)}",
+                          ),
+
+                          Divider(
+                            height: 1,
+                            color: Colors.white.withOpacity(.12),
+                          ),
+
+                          infoTile(
+                            icon: Icons.account_balance_wallet,
+                            label: "Balance Due",
+                            value: "₹${client.balanceDue.toStringAsFixed(0)}",
+                          ),
+                          Divider(
+                            height: 1,
+                            color: Colors.white.withOpacity(.12),
+                          ),
                           infoTile(
                             icon: Icons.event,
                             label: "Member Since",
@@ -493,7 +527,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     //-------------------------------------------------
                     // Actions
                     //-------------------------------------------------
-
                     actionTile(
                       icon: Icons.lock_reset,
                       label: "Change Password",
