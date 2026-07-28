@@ -8,9 +8,9 @@ const { Server } = require("socket.io");
 
 const connectDB = require("./config/database");
 
-// ===============================
+
 // Routes
-// ===============================
+
 const authRoutes = require("./routes/authRoutes");
 const clientRoutes = require("./routes/clientRoutes");
 const workoutRoutes = require("./routes/workoutRoutes");
@@ -87,21 +87,21 @@ app.use("/api/chat", chatRoutes);
 // Home
 // ==================================
 app.get("/", (req, res) => {
-  res.send("🚀 FitCoach API Running");
+  res.send("FitCoach API Running");
 });
 
-// ==================================
+
 // Trainer Profile
-// ==================================
+
 app.get("/api/profile", authMiddleware, (req, res) => {
   res.json(req.trainer);
 });
 
-// ==================================
+
 // Start Server
-// ==================================
+
 const PORT = process.env.PORT || 5000;
 
 server.listen(PORT, () => {
-  console.log(`🚀 Server running on port ${PORT}`);
+  console.log(` Server running on port ${PORT}`);
 });

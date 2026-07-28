@@ -7,6 +7,9 @@ const bcrypt = require("bcryptjs");
 // ==========================
 // Add Client
 // ==========================
+// ==========================
+// Add Client
+// ==========================
 exports.addClient = async (req, res) => {
   try {
     const {
@@ -22,7 +25,6 @@ exports.addClient = async (req, res) => {
       notes,
       totalFees,
       amountPaid,
-      balanceDue,
     } = req.body;
 
     const existingClient = await Client.findOne({
@@ -37,6 +39,11 @@ exports.addClient = async (req, res) => {
 
     const tempPassword = "Fit@1234";
     const hashedPassword = await bcrypt.hash(tempPassword, 10);
+    console.log("Request Body:", req.body);
+    console.log("Total Fees:", totalFees);
+    console.log("Amount Paid:", amountPaid);
+    const fees = Number(totalFees) || 0;
+    const paid = Number(amountPaid) || 0;
 
     const client = await Client.create({
       trainer: req.trainer._id,
@@ -51,11 +58,14 @@ exports.addClient = async (req, res) => {
       goal,
       medicalHistory,
       notes,
-      totalFees: totalFees || 0,
-      amountPaid: amountPaid || 0,
-      balanceDue: balanceDue || 0,
+
+      totalFees: fees,
+      amountPaid: paid,
+      balanceDue: Math.max(fees - paid, 0),
+
       isFirstLogin: true,
     });
+    
 
     res.status(201).json({
       message: "Client created successfully",
@@ -110,27 +120,52 @@ exports.getClient = async (req, res) => {
   }
 };
 
-// ==========================
-// Update Client
-// ==========================
+
 exports.updateClient = async (req, res) => {
   try {
-    const client = await Client.findOneAndUpdate(
-      {
-        _id: req.params.id,
-        trainer: req.trainer._id,
-      },
-      req.body,
-      {
-        new: true,
-      }
-    );
+    const client = await Client.findOne({
+      _id: req.params.id,
+      trainer: req.trainer._id,
+    });
 
     if (!client) {
       return res.status(404).json({
         message: "Client not found",
       });
     }
+
+    // Update client details
+    client.name = req.body.name ?? client.name;
+    client.email = req.body.email
+      ? req.body.email.toLowerCase()
+      : client.email;
+    client.phone = req.body.phone ?? client.phone;
+    client.age = req.body.age ?? client.age;
+    client.gender = req.body.gender ?? client.gender;
+    client.height = req.body.height ?? client.height;
+    client.weight = req.body.weight ?? client.weight;
+    client.goal = req.body.goal ?? client.goal;
+    client.medicalHistory =
+      req.body.medicalHistory ?? client.medicalHistory;
+    client.notes = req.body.notes ?? client.notes;
+
+    // Update Total Fees
+    if (req.body.totalFees !== undefined) {
+      client.totalFees = Number(req.body.totalFees);
+    }
+
+    // Get amount already paid from database
+    const paidAmount = client.amountPaid;
+
+    // Calculate new balance
+    client.balanceDue = client.totalFees - paidAmount;
+
+    // Prevent negative balance
+    if (client.balanceDue < 0) {
+      client.balanceDue = 0;
+    }
+
+    await client.save();
 
     res.json({
       message: "Client updated successfully",
@@ -142,7 +177,6 @@ exports.updateClient = async (req, res) => {
     });
   }
 };
-
 // ==========================
 // Update Balance
 // ==========================

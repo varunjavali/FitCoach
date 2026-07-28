@@ -16,12 +16,12 @@ class EditClientScreen extends StatefulWidget {
 class _EditClientScreenState extends State<EditClientScreen> {
   final _formKey = GlobalKey<FormState>();
 
-  late final nameController =
-      TextEditingController(text: widget.client.name);
-  late final emailController =
-      TextEditingController(text: widget.client.email);
-  late final phoneController =
-      TextEditingController(text: widget.client.phone);
+  late final nameController = TextEditingController(text: widget.client.name);
+  late final totalFeesController = TextEditingController(
+    text: widget.client.totalFees.toStringAsFixed(0),
+  );
+  late final emailController = TextEditingController(text: widget.client.email);
+  late final phoneController = TextEditingController(text: widget.client.phone);
   late final ageController = TextEditingController(
     text: widget.client.age?.toString() ?? "",
   );
@@ -31,12 +31,15 @@ class _EditClientScreenState extends State<EditClientScreen> {
   late final weightController = TextEditingController(
     text: widget.client.weight?.toString() ?? "",
   );
-  late final goalController =
-      TextEditingController(text: widget.client.goal ?? "");
-  late final medicalController =
-      TextEditingController(text: widget.client.medicalHistory ?? "");
-  late final notesController =
-      TextEditingController(text: widget.client.notes ?? "");
+  late final goalController = TextEditingController(
+    text: widget.client.goal ?? "",
+  );
+  late final medicalController = TextEditingController(
+    text: widget.client.medicalHistory ?? "",
+  );
+  late final notesController = TextEditingController(
+    text: widget.client.notes ?? "",
+  );
   late final amountPaidController = TextEditingController(
     text: widget.client.amountPaid.toStringAsFixed(0),
   );
@@ -65,14 +68,12 @@ class _EditClientScreenState extends State<EditClientScreen> {
         throw Exception("Login expired");
       }
 
-      final updated = ClientModel(
+      final draft = ClientModel(
         id: widget.client.id,
         name: nameController.text.trim(),
         email: emailController.text.trim(),
         phone: phoneController.text.trim(),
-        age: ageController.text.isEmpty
-            ? null
-            : int.parse(ageController.text),
+        age: ageController.text.isEmpty ? null : int.parse(ageController.text),
         gender: gender,
         height: heightController.text.isEmpty
             ? null
@@ -83,15 +84,25 @@ class _EditClientScreenState extends State<EditClientScreen> {
         goal: goalController.text.trim(),
         medicalHistory: medicalController.text.trim(),
         notes: notesController.text.trim(),
-        amountPaid: double.tryParse(amountPaidController.text.trim()) ?? 0,
-        balanceDue: double.tryParse(balanceDueController.text.trim()) ?? 0,
+
+        // Sent as the new target — the server is the source of truth
+        // for what amountPaid/balanceDue end up being.
+        totalFees: double.tryParse(totalFeesController.text.trim()) ?? 0,
+        amountPaid: widget.client.amountPaid,
+        balanceDue: widget.client.balanceDue,
       );
 
-      await clientService.updateClient(token, widget.client.id, updated);
+      // Use what the server actually computed and saved, not our
+      // local draft — this is what fixes the stale/wrong balance.
+      final serverClient = await clientService.updateClient(
+        token,
+        widget.client.id,
+        draft,
+      );
 
       if (!mounted) return;
 
-      Navigator.pop(context, updated);
+      Navigator.pop(context, serverClient);
     } catch (e) {
       if (!mounted) return;
 
@@ -100,10 +111,7 @@ class _EditClientScreenState extends State<EditClientScreen> {
       });
 
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(e.toString()),
-          backgroundColor: Colors.red,
-        ),
+        SnackBar(content: Text(e.toString()), backgroundColor: Colors.red),
       );
     }
   }
@@ -136,9 +144,7 @@ class _EditClientScreenState extends State<EditClientScreen> {
         },
         decoration: InputDecoration(
           labelText: label,
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
+          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
         ),
       ),
     );
@@ -152,6 +158,7 @@ class _EditClientScreenState extends State<EditClientScreen> {
     ageController.dispose();
     heightController.dispose();
     weightController.dispose();
+    totalFeesController.dispose();
     goalController.dispose();
     medicalController.dispose();
     notesController.dispose();
@@ -163,9 +170,7 @@ class _EditClientScreenState extends State<EditClientScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text("Edit Client"),
-      ),
+      appBar: AppBar(title: const Text("Edit Client")),
       body: Form(
         key: _formKey,
         child: ListView(
@@ -210,53 +215,25 @@ class _EditClientScreenState extends State<EditClientScreen> {
 
             const Text(
               "Payment",
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 16,
-              ),
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
             ),
             const SizedBox(height: 10),
 
-            Row(
-              children: [
-                Expanded(
-                  child: TextFormField(
-                    controller: amountPaidController,
-                    keyboardType: const TextInputType.numberWithOptions(
-                      decimal: true,
-                    ),
-                    decoration: InputDecoration(
-                      labelText: "Amount Paid (₹)",
-                      prefixIcon: const Icon(
-                        Icons.payments_outlined,
-                        color: Colors.green,
-                      ),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                  ),
+            TextFormField(
+              controller: totalFeesController,
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
+              ),
+              decoration: InputDecoration(
+                labelText: "Total Fees (₹)",
+                prefixIcon: const Icon(
+                  Icons.currency_rupee,
+                  color: Colors.blue,
                 ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: TextFormField(
-                    controller: balanceDueController,
-                    keyboardType: const TextInputType.numberWithOptions(
-                      decimal: true,
-                    ),
-                    decoration: InputDecoration(
-                      labelText: "Balance to be Paid (₹)",
-                      prefixIcon: const Icon(
-                        Icons.hourglass_empty,
-                        color: Colors.orange,
-                      ),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                  ),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
                 ),
-              ],
+              ),
             ),
 
             const SizedBox(height: 30),

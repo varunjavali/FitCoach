@@ -63,9 +63,8 @@ class AuthService {
     }
   }
 
-  /// Logout
+  
   Future<void> logout() async {
-    // Backend doesn't need logout because JWT is stateless.
-    // We'll clear SharedPreferences in the app.
+    
   }
 }

@@ -80,8 +80,7 @@ class ClientModel {
       "medicalHistory": medicalHistory,
       "notes": notes,
       "totalFees": totalFees,
-      "amountPaid": amountPaid,
-      "balanceDue": balanceDue,
+     
     };
   }
 }

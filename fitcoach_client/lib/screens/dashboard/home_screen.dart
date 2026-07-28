@@ -1,3 +1,4 @@
+import 'package:fitcoach_client/screens/profile/profile_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -72,9 +73,7 @@ class _HomeScreenState extends State<HomeScreen> {
     return Card(
       elevation: 4,
       margin: const EdgeInsets.only(bottom: 15),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(18),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
       child: InkWell(
         borderRadius: BorderRadius.circular(18),
         onTap: onTap,
@@ -85,19 +84,14 @@ class _HomeScreenState extends State<HomeScreen> {
               CircleAvatar(
                 radius: 28,
                 backgroundColor: color.withOpacity(.15),
-                child: Icon(
-                  icon,
-                  color: color,
-                  size: 28,
-                ),
+                child: Icon(icon, color: color, size: 28),
               ),
 
               const SizedBox(width: 18),
 
               Expanded(
                 child: Column(
-                  crossAxisAlignment:
-                      CrossAxisAlignment.start,
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
                       title,
@@ -109,12 +103,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
                     const SizedBox(height: 6),
 
-                    Text(
-                      subtitle,
-                      style: const TextStyle(
-                        color: Colors.grey,
-                      ),
-                    ),
+                    Text(subtitle, style: const TextStyle(color: Colors.grey)),
                   ],
                 ),
               ),
@@ -127,21 +116,13 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget statCard(
-    String title,
-    String value,
-    Color color,
-  ) {
+  Widget statCard(String title, String value, Color color) {
     return Expanded(
       child: Card(
         elevation: 4,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(18),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
         child: Padding(
-          padding: const EdgeInsets.symmetric(
-            vertical: 25,
-          ),
+          padding: const EdgeInsets.symmetric(vertical: 25),
           child: Column(
             children: [
               Text(
@@ -155,12 +136,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
               const SizedBox(height: 8),
 
-              Text(
-                title,
-                style: const TextStyle(
-                  color: Colors.grey,
-                ),
-              ),
+              Text(title, style: const TextStyle(color: Colors.grey)),
             ],
           ),
         ),
@@ -171,33 +147,75 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     if (loading) {
-      return const Scaffold(
-        body: Center(
-          child: CircularProgressIndicator(),
-        ),
-      );
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
     if (error != null && error!.isNotEmpty) {
       return Scaffold(
-        appBar: AppBar(
-          title: const Text("Fitness Equation"),
-        ),
+        appBar: AppBar(title: const Text("Fitness Equation")),
         body: Center(
-          child: Text(
-            error!,
-            style: const TextStyle(color: Colors.red),
-          ),
+          child: Text(error!, style: const TextStyle(color: Colors.red)),
         ),
       );
     }
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text("Fitness Equation"),
-        centerTitle: true,
-        elevation: 0,
+      appBar:AppBar(
+  elevation: 0,
+  centerTitle: true,
+  title: const Text("Fitness Equation"),
+
+  // Profile Image (Top Left)
+  leadingWidth: 65,
+  leading: Padding(
+    padding: const EdgeInsets.only(left: 12),
+    child: GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => const ProfileScreen(),
+          ),
+        );
+      },
+      child: const CircleAvatar(
+        radius: 18,
+        backgroundImage: AssetImage(
+          "assets/images/logo.jpeg",
+        ),
       ),
+    ),
+  ),
+
+  // Balance Due (Top Right)
+  actions: [
+    Padding(
+      padding: const EdgeInsets.only(right: 16),
+      child: Center(
+        child: Container(
+          padding: const EdgeInsets.symmetric(
+            horizontal: 12,
+            vertical: 6,
+          ),
+          decoration: BoxDecoration(
+            color: dashboard!.client.balanceDue > 0
+                ? Colors.redAccent
+                : Colors.green,
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: Text(
+            "Due ₹${dashboard!.client.balanceDue.toStringAsFixed(0)}",
+            style: const TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.bold,
+              fontSize: 14,
+            ),
+          ),
+        ),
+      ),
+    ),
+  ],
+),
       body: RefreshIndicator(
         onRefresh: loadDashboard,
         child: SingleChildScrollView(
@@ -212,10 +230,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(20),
                   gradient: const LinearGradient(
-                    colors: [
-                      Colors.green,
-                      Colors.teal,
-                    ],
+                    colors: [Colors.green, Colors.teal],
                   ),
                 ),
                 child: Column(
@@ -223,9 +238,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   children: [
                     const Text(
                       "Welcome Back 👋",
-                      style: TextStyle(
-                        color: Colors.white70,
-                      ),
+                      style: TextStyle(color: Colors.white70),
                     ),
 
                     const SizedBox(height: 8),
@@ -243,9 +256,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
                     Text(
                       dashboard!.client.goal,
-                      style: const TextStyle(
-                        color: Colors.white70,
-                      ),
+                      style: const TextStyle(color: Colors.white70),
                     ),
                   ],
                 ),
@@ -263,35 +274,11 @@ class _HomeScreenState extends State<HomeScreen> {
 
                   const SizedBox(width: 12),
 
-                  statCard(
-                    "BMI",
-                    bmi.toStringAsFixed(1),
-                    Colors.orange,
-                  ),
+                  statCard("BMI", bmi.toStringAsFixed(1), Colors.orange),
                 ],
               ),
 
               const SizedBox(height: 12),
-
-              Row(
-                children: [
-                  statCard(
-                    "Amount Paid",
-                    "₹${dashboard!.client.amountPaid.toStringAsFixed(0)}",
-                    Colors.green,
-                  ),
-
-                  const SizedBox(width: 12),
-
-                  statCard(
-                    "Balance Due",
-                    "₹${dashboard!.client.balanceDue.toStringAsFixed(0)}",
-                    dashboard!.client.balanceDue > 0
-                        ? Colors.redAccent
-                        : Colors.grey,
-                  ),
-                ],
-              ),
 
               const SizedBox(height: 20),
 
@@ -303,9 +290,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 onTap: () {
                   Navigator.push(
                     context,
-                    MaterialPageRoute(
-                      builder: (_) => const ProgressScreen(),
-                    ),
+                    MaterialPageRoute(builder: (_) => const ProgressScreen()),
                   );
                 },
               ),
