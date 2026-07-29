@@ -17,7 +17,6 @@ const paymentSchema = new mongoose.Schema(
     receiptNo: {
       type: String,
       unique: true,
-      required: true,
     },
 
     amount: {
@@ -33,18 +32,8 @@ const paymentSchema = new mongoose.Schema(
 
     paymentType: {
       type: String,
-      enum: [
-        "Membership",
-        "Renewal",
-        "Balance",
-        "Refund",
-      ],
+      enum: ["Membership", "Renewal", "Balance", "Refund"],
       default: "Membership",
-    },
-
-    remarks: {
-      type: String,
-      default: "",
     },
 
     status: {
@@ -52,10 +41,13 @@ const paymentSchema = new mongoose.Schema(
       enum: ["Success", "Cancelled", "Refunded"],
       default: "Success",
     },
+
+    remarks: {
+      type: String,
+      default: "",
+    },
   },
-  {
-    timestamps: true,
-  }
+  { timestamps: true }
 );
 
 module.exports = mongoose.model("Payment", paymentSchema);
