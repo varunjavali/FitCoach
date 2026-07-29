@@ -21,6 +21,7 @@ const clientDashboardRoutes = require("./routes/clientDashboardRoutes");
 const clientAuthRoutes = require("./routes/clientAuthRoutes");
 const chatRoutes = require("./routes/chatRoutes");
 const membershipRoutes = require("./routes/membershipRoutes");
+const paymentRoutes = require("./routes/paymentRoutes");
 
 // Socket
 const initializeSocket = require("./socket/socket");
@@ -62,6 +63,7 @@ app.use(express.json());
 // Static files (chat media uploads)
 // ==================================
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
+app.use("/api/payments", paymentRoutes);
 
 // ==================================
 // Trainer APIs

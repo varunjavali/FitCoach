@@ -1,9 +1,14 @@
 const Client = require("../models/Client");
+const Payment = require("../models/Payment");
+
+const Client = require("../models/Client");
+const Payment = require("../models/Payment");
 
 exports.getDashboard = async (req, res) => {
   try {
     const trainerId = req.trainer._id;
 
+    // Clients
     const clients = await Client.find({ trainer: trainerId });
 
     const totalClients = clients.length;
@@ -16,35 +21,88 @@ exports.getDashboard = async (req, res) => {
       (c) => c.membershipStatus === "Expired"
     ).length;
 
-    const monthlyRevenue = clients.reduce(
-      (sum, c) => sum + (c.amountPaid || 0),
-      0
-    );
-
-    const pendingPayments = clients.reduce(
+    const pendingBalance = clients.reduce(
       (sum, c) => sum + (c.balanceDue || 0),
       0
     );
-    console.log({
-      totalClients: clients.length,
-      firstClient: clients[0],
+
+    // Today's collection
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const todayResult = await Payment.aggregate([
+      {
+        $match: {
+          trainer: trainerId,
+          status: "Success",
+          createdAt: { $gte: today },
+        },
+      },
+      {
+        $group: {
+          _id: null,
+          total: { $sum: "$amount" },
+        },
+      },
+    ]);
+
+    // Current month's revenue
+    const monthStart = new Date(
+      today.getFullYear(),
+      today.getMonth(),
+      1
+    );
+
+    const monthResult = await Payment.aggregate([
+      {
+        $match: {
+          trainer: trainerId,
+          status: "Success",
+          createdAt: { $gte: monthStart },
+        },
+      },
+      {
+        $group: {
+          _id: null,
+          total: { $sum: "$amount" },
+        },
+      },
+    ]);
+
+    // Total revenue
+    const totalRevenueResult = await Payment.aggregate([
+      {
+        $match: {
+          trainer: trainerId,
+          status: "Success",
+        },
+      },
+      {
+        $group: {
+          _id: null,
+          total: { $sum: "$amount" },
+        },
+      },
+    ]);
+
+    // Payment count
+    const totalTransactions = await Payment.countDocuments({
+      trainer: trainerId,
+      status: "Success",
     });
 
-    const today = new Date();
-    const next7 = new Date();
-    next7.setDate(today.getDate() + 7);
+    // Expiring memberships (next 7 days)
+    const nextWeek = new Date();
+    nextWeek.setDate(nextWeek.getDate() + 7);
 
     const expiringSoon = clients.filter((c) => {
       if (!c.membershipEndDate) return false;
 
-      const endDate = new Date(c.membershipEndDate);
-
-      return endDate >= today && endDate <= next7;
+      return (
+        c.membershipStatus === "Active" &&
+        c.membershipEndDate <= nextWeek
+      );
     }).length;
-
-    const recentClients = clients
-      .sort((a, b) => b.createdAt - a.createdAt)
-      .slice(0, 5);
 
     res.json({
       trainerName: req.trainer.name,
@@ -52,12 +110,17 @@ exports.getDashboard = async (req, res) => {
       totalClients,
       activeMembers,
       expiredMembers,
-
-      monthlyRevenue,
-      pendingPayments,
       expiringSoon,
 
-      recentClients,
+      todayCollection: todayResult[0]?.total || 0,
+
+      monthlyRevenue: monthResult[0]?.total || 0,
+
+      totalRevenue: totalRevenueResult[0]?.total || 0,
+
+      pendingBalance,
+
+      totalTransactions,
     });
   } catch (err) {
     res.status(500).json({

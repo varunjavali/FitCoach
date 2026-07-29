@@ -23,9 +23,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
   int activeMembers = 0;
   int expiredMembers = 0;
   int expiringSoon = 0;
+  int totalTransactions = 0;
 
   double monthlyRevenue = 0;
-  double pendingPayments = 0;
+  double todayCollection = 0;
+  double totalRevenue = 0;
+  double pendingBalance = 0;
 
   bool isLoading = true;
 
@@ -54,7 +57,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
   Future<void> loadDashboard() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-
       final token = prefs.getString("token");
 
       if (token == null) return;
@@ -62,23 +64,43 @@ class _DashboardScreenState extends State<DashboardScreen> {
       final data = await dashboardService.getDashboard(token);
       debugPrint("Dashboard API: $data");
 
-      trainerName = data["trainerName"] ?? "Trainer";
+      if (!mounted) return;
 
-      totalClients = data["totalClients"] ?? 0;
-      activeMembers = data["activeMembers"] ?? 0;
-      expiredMembers = data["expiredMembers"] ?? 0;
-      expiringSoon = data["expiringSoon"] ?? 0;
+      setState(() {
+        trainerName = data["trainerName"] ?? "Trainer";
 
-      monthlyRevenue = (data["monthlyRevenue"] ?? 0).toDouble();
-      pendingPayments = (data["pendingPayments"] ?? 0).toDouble();
+        totalClients = data["totalClients"] ?? 0;
+        activeMembers = data["activeMembers"] ?? 0;
+        expiredMembers = data["expiredMembers"] ?? 0;
+        expiringSoon = data["expiringSoon"] ?? 0;
 
-      if (mounted) {
-        setState(() {
-          isLoading = false;
-        });
-      }
+        todayCollection = (data["todayCollection"] as num?)?.toDouble() ?? 0.0;
+
+        monthlyRevenue = (data["monthlyRevenue"] as num?)?.toDouble() ?? 0.0;
+
+        totalRevenue = (data["totalRevenue"] as num?)?.toDouble() ?? 0.0;
+
+        pendingBalance = (data["pendingBalance"] as num?)?.toDouble() ?? 0.0;
+
+        totalTransactions = data["totalTransactions"] ?? 0;
+
+        isLoading = false;
+      });
     } catch (e) {
-      debugPrint(e.toString());
+      debugPrint("Dashboard Error: $e");
+
+      if (!mounted) return;
+
+      setState(() {
+        isLoading = false;
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text("Failed to load dashboard"),
+          backgroundColor: Colors.red,
+        ),
+      );
     }
   }
 
@@ -215,6 +237,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   @override
   Widget build(BuildContext context) {
+    if (isLoading) {
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
     return Scaffold(
       extendBodyBehindAppBar: true,
       appBar: PreferredSize(
@@ -348,15 +373,36 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         ),
 
                         dashboardCard(
-                          title: "Revenue",
-                          value: "₹${monthlyRevenue.toStringAsFixed(0)}",
+                          title: "Monthly Revenue",
+                          value: "₹${(monthlyRevenue).toStringAsFixed(0)}",
                           icon: Icons.currency_rupee,
                           color: Colors.teal,
                         ),
 
                         dashboardCard(
-                          title: "Pending",
-                          value: "₹${pendingPayments.toStringAsFixed(0)}",
+                          title: "Today's Collection",
+                          value: "₹${todayCollection.toStringAsFixed(0)}",
+                          icon: Icons.today,
+                          color: Colors.greenAccent,
+                        ),
+
+                        dashboardCard(
+                          title: "Total Revenue",
+                          value: "₹${totalRevenue.toStringAsFixed(0)}",
+                          icon: Icons.account_balance,
+                          color: Colors.cyan,
+                        ),
+
+                        dashboardCard(
+                          title: "Transactions",
+                          value: totalTransactions.toString(),
+                          icon: Icons.receipt_long,
+                          color: Colors.amber,
+                        ),
+
+                        dashboardCard(
+                          title: "Pending Balance",
+                          value: "₹${pendingBalance.toStringAsFixed(0)}",
                           icon: Icons.account_balance_wallet,
                           color: Colors.deepPurpleAccent,
                         ),
