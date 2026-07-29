@@ -15,6 +15,8 @@ class ClientModel {
   final double totalFees;
   final double amountPaid;
   final double balanceDue;
+  final String membershipBadge;
+  final int membershipDuration;
 
   ClientModel({
     required this.id,
@@ -32,6 +34,8 @@ class ClientModel {
     this.totalFees = 0,
     this.amountPaid = 0,
     this.balanceDue = 0,
+     this.membershipBadge="Basic",
+     this.membershipDuration=1
   });
 
   factory ClientModel.fromJson(Map<String, dynamic> json) {
@@ -63,6 +67,8 @@ class ClientModel {
       balanceDue: json["balanceDue"] == null
           ? 0
           : (json["balanceDue"] as num).toDouble(),
+      membershipBadge: json['membershipBadge'] ?? 'Basic',
+      membershipDuration: json['membershipDuration'] ?? 1,
     );
   }
 
@@ -79,8 +85,11 @@ class ClientModel {
       "joiningDate": joiningDate?.toIso8601String(),
       "medicalHistory": medicalHistory,
       "notes": notes,
+      "amountPaid": amountPaid,
+      "balanceDue": balanceDue,
       "totalFees": totalFees,
-     
+      'membershipBadge': membershipBadge,
+      'membershipDuration': membershipDuration,
     };
   }
 }

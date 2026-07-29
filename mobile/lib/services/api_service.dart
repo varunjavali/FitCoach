@@ -10,4 +10,12 @@ class ApiService {
       },
     ),
   );
+
+  static Options authOptions(String token) {
+    return Options(
+      headers: {
+        "Authorization": "Bearer $token",
+      },
+    );
+  }
 }

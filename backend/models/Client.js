@@ -81,37 +81,63 @@ const clientSchema = new mongoose.Schema(
       type: Boolean,
       default: true,
     },
+
     isFirstLogin: {
       type: Boolean,
       default: true,
     },
+
+    // Payment
     totalFees: {
       type: Number,
       default: 0,
-  },
-  
-  amountPaid: {
+    },
+
+    amountPaid: {
       type: Number,
       default: 0,
-  },
-  
-  balanceDue: {
+    },
+
+    balanceDue: {
       type: Number,
       default: 0,
-  },
+    },
+
+    // Membership
+    membershipBadge: {
+      type: String,
+      enum: ["Basic", "Silver", "Gold", "Platinum", "Premium", "VIP"],
+      default: "Basic",
+    },
+
+    membershipStatus: {
+      type: String,
+      enum: ["Active", "Expired", "Cancelled"],
+      default: "Active",
+    },
+
+    membershipStartDate: {
+      type: Date,
+      default: Date.now,
+    },
+
+    membershipEndDate: {
+      type: Date,
+      default: null,
+    },
+    membershipDuration: {
+      type: Number,
+      drequired: true,
+    },
 
     lastLogin: {
       type: Date,
       default: null,
     },
-
-    
-    
   },
   {
     timestamps: true,
   }
-  
 );
 
 module.exports = mongoose.model("Client", clientSchema);

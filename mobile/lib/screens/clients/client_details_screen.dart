@@ -2,12 +2,16 @@ import 'package:fit_coach/screens/chat/trainer_chat_screen.dart'
     show TrainerChatScreen;
 import 'package:fit_coach/screens/diet/client_diet_list_screen.dart'
     show ClientDietListScreen;
+import 'package:fit_coach/screens/membership/RenewMembershipScreen.dart'
+    show RenewMembershipScreen;
 import 'package:fit_coach/screens/progress/client_progress_list_screen.dart'
     show ClientProgressListScreen;
 import 'package:flutter/material.dart';
 import 'package:fit_coach/screens/clients/update_balance_screen.dart';
 
 import '../../models/client_model.dart';
+import '../membership/MembershipHistoryScreen.dart'
+    show MembershipHistoryScreen;
 import '../workouts/client_workout_list_screen.dart';
 import 'edit_client_screen.dart';
 
@@ -242,6 +246,41 @@ class _ClientDetailsScreenState extends State<ClientDetailsScreen> {
             ),
             actionCard(
               context: context,
+              icon: Icons.card_membership,
+              title: "Renew Membership",
+              subtitle: "Renew or Upgrade Membership",
+              color: Colors.blue,
+              onTap: () async {
+                final result = await Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => RenewMembershipScreen(client: client),
+                  ),
+                );
+
+                if (result == true) {
+                  // Refresh client details after renewal
+                  setState(() {});
+                }
+              },
+            ),
+            actionCard(
+              context: context,
+              icon: Icons.history,
+              title: "Membership History",
+              subtitle: "View all membership renewals",
+              color: Colors.deepOrange,
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => MembershipHistoryScreen(client: client),
+                  ),
+                );
+              },
+            ),
+            actionCard(
+              context: context,
               icon: Icons.account_balance_wallet,
               title: "Update Balance",
               subtitle: "Receive Payment & Update Balance",
@@ -321,4 +360,3 @@ class _ClientDetailsScreenState extends State<ClientDetailsScreen> {
     );
   }
 }
-

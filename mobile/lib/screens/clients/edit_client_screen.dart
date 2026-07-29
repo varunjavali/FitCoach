@@ -15,7 +15,18 @@ class EditClientScreen extends StatefulWidget {
 
 class _EditClientScreenState extends State<EditClientScreen> {
   final _formKey = GlobalKey<FormState>();
+  String membershipBadge = "Basic";
+  int membershipDuration = 1;
+  final List<String> membershipBadges = [
+    "Basic",
+    "Silver",
+    "Gold",
+    "Platinum",
+    "Premium",
+    "VIP",
+  ];
 
+  final List<int> membershipDurations = [1, 3, 6, 12];
   late final nameController = TextEditingController(text: widget.client.name);
   late final totalFeesController = TextEditingController(
     text: widget.client.totalFees.toStringAsFixed(0),
@@ -52,6 +63,13 @@ class _EditClientScreenState extends State<EditClientScreen> {
   bool loading = false;
 
   final ClientService clientService = ClientService();
+  @override
+  void initState() {
+    super.initState();
+
+    membershipBadge = widget.client.membershipBadge;
+    membershipDuration = widget.client.membershipDuration;
+  }
 
   Future<void> saveChanges() async {
     if (!_formKey.currentState!.validate()) return;
@@ -84,6 +102,8 @@ class _EditClientScreenState extends State<EditClientScreen> {
         goal: goalController.text.trim(),
         medicalHistory: medicalController.text.trim(),
         notes: notesController.text.trim(),
+        membershipBadge: widget.client.membershipBadge,
+        membershipDuration: widget.client.membershipDuration,
 
         // Sent as the new target — the server is the source of truth
         // for what amountPaid/balanceDue end up being.
@@ -217,6 +237,7 @@ class _EditClientScreenState extends State<EditClientScreen> {
               "Payment",
               style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
             ),
+           
             const SizedBox(height: 10),
 
             TextFormField(

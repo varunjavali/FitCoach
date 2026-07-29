@@ -1,6 +1,7 @@
 const Client = require("../models/Client");
 const Workout = require("../models/Workout");
 const Diet = require("../models/Diet");
+const Membership = require("../models/membership");
 const Progress = require("../models/Progress");
 const bcrypt = require("bcryptjs");
 
@@ -23,8 +24,12 @@ exports.addClient = async (req, res) => {
       goal,
       medicalHistory,
       notes,
+
       totalFees,
       amountPaid,
+
+      membershipBadge,
+      membershipDuration,
     } = req.body;
 
     const existingClient = await Client.findOne({
@@ -39,17 +44,26 @@ exports.addClient = async (req, res) => {
 
     const tempPassword = "Fit@1234";
     const hashedPassword = await bcrypt.hash(tempPassword, 10);
-    console.log("Request Body:", req.body);
-    console.log("Total Fees:", totalFees);
-    console.log("Amount Paid:", amountPaid);
+
     const fees = Number(totalFees) || 0;
     const paid = Number(amountPaid) || 0;
+    const balance = Math.max(fees - paid, 0);
 
+    // Membership Dates
+    const startDate = new Date();
+    const endDate = new Date(startDate);
+    endDate.setMonth(
+      endDate.getMonth() + (Number(membershipDuration) || 1)
+    );
+
+    // Create Client
     const client = await Client.create({
       trainer: req.trainer._id,
+
       name,
       email: email.toLowerCase(),
       password: hashedPassword,
+
       phone,
       age,
       gender,
@@ -61,11 +75,34 @@ exports.addClient = async (req, res) => {
 
       totalFees: fees,
       amountPaid: paid,
-      balanceDue: Math.max(fees - paid, 0),
+      balanceDue: balance,
+
+      membershipBadge,
+      membershipDuration,
+      membershipStatus: "Active",
+      membershipStartDate: startDate,
+      membershipEndDate: endDate,
 
       isFirstLogin: true,
     });
-    
+
+    // Create First Membership History
+    await Membership.create({
+      trainer: req.trainer._id,
+      client: client._id,
+
+      badge: membershipBadge,
+      durationMonths: membershipDuration,
+
+      startDate,
+      endDate,
+
+      totalFees: fees,
+      amountPaid: paid,
+      balanceDue: balance,
+
+      status: "Active",
+    });
 
     res.status(201).json({
       message: "Client created successfully",

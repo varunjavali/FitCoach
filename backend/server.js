@@ -20,6 +20,7 @@ const dashboardRoutes = require("./routes/dashboardRoutes");
 const clientDashboardRoutes = require("./routes/clientDashboardRoutes");
 const clientAuthRoutes = require("./routes/clientAuthRoutes");
 const chatRoutes = require("./routes/chatRoutes");
+const membershipRoutes = require("./routes/membershipRoutes");
 
 // Socket
 const initializeSocket = require("./socket/socket");
@@ -67,6 +68,7 @@ app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 // ==================================
 app.use("/api/auth", authRoutes);
 app.use("/api/dashboard", dashboardRoutes);
+app.use("/api/memberships", membershipRoutes);
 app.use("/api/clients", clientRoutes);
 app.use("/api/workouts", workoutRoutes);
 app.use("/api/diets", dietRoutes);

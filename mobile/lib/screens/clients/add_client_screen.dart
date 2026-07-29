@@ -30,6 +30,19 @@ class _AddClientScreenState extends State<AddClientScreen> {
   final amountPaidController = TextEditingController();
 
   String gender = "Male";
+  String membershipBadge = "Basic";
+  int membershipDuration = 1;
+
+  final List<String> membershipBadges = [
+    "Basic",
+    "Silver",
+    "Gold",
+    "Platinum",
+    "Premium",
+    "VIP",
+  ];
+
+  final List<int> membershipDurations = [1, 3, 6, 12];
 
   bool loading = false;
 
@@ -95,6 +108,8 @@ class _AddClientScreenState extends State<AddClientScreen> {
         totalFees: totalFees,
         amountPaid: amountPaid,
         balanceDue: balanceDue,
+        membershipBadge: membershipBadge,
+        membershipDuration: membershipDuration,
       );
 
       await clientService.addClient(token, client);
@@ -333,6 +348,48 @@ class _AddClientScreenState extends State<AddClientScreen> {
                     amountPaidController,
                     "Amount Paid",
                     TextInputType.number,
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 15),
+                    child: DropdownButtonFormField<String>(
+                      value: membershipBadge,
+                      dropdownColor: const Color(0xff203A43),
+                      style: const TextStyle(color: Colors.white),
+                      iconEnabledColor: Colors.white70,
+                      decoration: _decoration("Membership Badge"),
+                      items: membershipBadges.map((badge) {
+                        return DropdownMenuItem(
+                          value: badge,
+                          child: Text(badge),
+                        );
+                      }).toList(),
+                      onChanged: (value) {
+                        setState(() {
+                          membershipBadge = value!;
+                        });
+                      },
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 15),
+                    child: DropdownButtonFormField<int>(
+                      value: membershipDuration,
+                      dropdownColor: const Color(0xff203A43),
+                      style: const TextStyle(color: Colors.white),
+                      iconEnabledColor: Colors.white70,
+                      decoration: _decoration("Membership Duration"),
+                      items: membershipDurations.map((month) {
+                        return DropdownMenuItem(
+                          value: month,
+                          child: Text("$month Month${month > 1 ? "s" : ""}"),
+                        );
+                      }).toList(),
+                      onChanged: (value) {
+                        setState(() {
+                          membershipDuration = value!;
+                        });
+                      },
+                    ),
                   ),
 
                   const SizedBox(height: 15),
