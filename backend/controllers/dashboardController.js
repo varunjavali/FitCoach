@@ -1,10 +1,10 @@
 const Client = require("../models/Client");
 const Payment = require("../models/Payment");
 
-const Client = require("../models/Client");
-const Payment = require("../models/Payment");
+
 
 exports.getDashboard = async (req, res) => {
+  console.log("🔥 NEW DASHBOARD CONTROLLER RUNNING");
   try {
     const trainerId = req.trainer._id;
 
