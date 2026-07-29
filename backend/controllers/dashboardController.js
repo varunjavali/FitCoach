@@ -122,6 +122,7 @@ exports.getDashboard = async (req, res) => {
 
       totalTransactions,
     });
+    
   } catch (err) {
     res.status(500).json({
       message: err.message,
