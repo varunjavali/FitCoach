@@ -6,6 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../models/client_model.dart';
 import '../../services/client_service.dart';
+import '../../services/dashboard_service.dart';
 import '../clients/client_list_screen.dart';
 
 class DashboardScreen extends StatefulWidget {
@@ -17,7 +18,18 @@ class DashboardScreen extends StatefulWidget {
 
 class _DashboardScreenState extends State<DashboardScreen> {
   String trainerName = "";
-  int clientCount = 0;
+
+  int totalClients = 0;
+  int activeMembers = 0;
+  int expiredMembers = 0;
+  int expiringSoon = 0;
+
+  double monthlyRevenue = 0;
+  double pendingPayments = 0;
+
+  bool isLoading = true;
+
+  final DashboardService dashboardService = DashboardService();
 
   final ClientService clientService = ClientService();
 
@@ -28,11 +40,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   static const _bgGradient = LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
-    colors: [
-      Color(0xff0F2027),
-      Color(0xff203A43),
-      Color(0xff2C5364),
-    ],
+    colors: [Color(0xff0F2027), Color(0xff203A43), Color(0xff2C5364)],
   );
 
   static final Color _accent = Colors.greenAccent.shade400;
@@ -47,18 +55,27 @@ class _DashboardScreenState extends State<DashboardScreen> {
     try {
       final prefs = await SharedPreferences.getInstance();
 
-      trainerName = prefs.getString("trainerName") ?? "Trainer";
-
       final token = prefs.getString("token");
 
-      if (token != null) {
-        final List<ClientModel> clients = await clientService.getClients(token);
+      if (token == null) return;
 
-        clientCount = clients.length;
-      }
+      final data = await dashboardService.getDashboard(token);
+      debugPrint("Dashboard API: $data");
+
+      trainerName = data["trainerName"] ?? "Trainer";
+
+      totalClients = data["totalClients"] ?? 0;
+      activeMembers = data["activeMembers"] ?? 0;
+      expiredMembers = data["expiredMembers"] ?? 0;
+      expiringSoon = data["expiringSoon"] ?? 0;
+
+      monthlyRevenue = (data["monthlyRevenue"] ?? 0).toDouble();
+      pendingPayments = (data["pendingPayments"] ?? 0).toDouble();
 
       if (mounted) {
-        setState(() {});
+        setState(() {
+          isLoading = false;
+        });
       }
     } catch (e) {
       debugPrint(e.toString());
@@ -143,10 +160,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             const SizedBox(height: 4),
             Text(
               title,
-              style: GoogleFonts.poppins(
-                fontSize: 12.5,
-                color: Colors.white60,
-              ),
+              style: GoogleFonts.poppins(fontSize: 12.5, color: Colors.white60),
               textAlign: TextAlign.center,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
@@ -233,7 +247,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
       ),
       body: Stack(
         children: [
-
           Container(
             width: double.infinity,
             height: double.infinity,
@@ -299,40 +312,53 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     const SizedBox(height: 28),
 
                     GridView.count(
-                      physics: const NeverScrollableScrollPhysics(),
-                      shrinkWrap: true,
                       crossAxisCount: 2,
                       crossAxisSpacing: 14,
                       mainAxisSpacing: 14,
                       childAspectRatio: 1.0,
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
                       children: [
                         dashboardCard(
                           title: "Clients",
-                          value: clientCount.toString(),
+                          value: totalClients.toString(),
                           icon: Icons.people,
-                          color: Colors.lightBlueAccent.shade200,
-                          onTap: openClients,
+                          color: Colors.lightBlueAccent,
+                        ),
+
+                        dashboardCard(
+                          title: "Active",
+                          value: activeMembers.toString(),
+                          icon: Icons.verified,
+                          color: Colors.green,
+                        ),
+
+                        dashboardCard(
+                          title: "Expired",
+                          value: expiredMembers.toString(),
+                          icon: Icons.warning,
+                          color: Colors.redAccent,
+                        ),
+
+                        dashboardCard(
+                          title: "Expiring Soon",
+                          value: expiringSoon.toString(),
+                          icon: Icons.schedule,
+                          color: Colors.orange,
                         ),
 
                         dashboardCard(
                           title: "Revenue",
-                          value: "₹0",
+                          value: "₹${monthlyRevenue.toStringAsFixed(0)}",
                           icon: Icons.currency_rupee,
-                          color: _accent,
+                          color: Colors.teal,
                         ),
 
                         dashboardCard(
-                          title: "Active Clients",
-                          value: clientCount.toString(),
-                          icon: Icons.people_alt,
-                          color: Colors.deepPurpleAccent.shade100,
-                        ),
-
-                        dashboardCard(
-                          title: "Diet Plans",
-                          value: "-",
-                          icon: Icons.restaurant_menu,
-                          color: Colors.orangeAccent.shade200,
+                          title: "Pending",
+                          value: "₹${pendingPayments.toStringAsFixed(0)}",
+                          icon: Icons.account_balance_wallet,
+                          color: Colors.deepPurpleAccent,
                         ),
                       ],
                     ),
