@@ -251,16 +251,17 @@ class _ClientDetailsScreenState extends State<ClientDetailsScreen> {
               subtitle: "Renew or Upgrade Membership",
               color: Colors.blue,
               onTap: () async {
-                final result = await Navigator.push(
+                final updatedClient = await Navigator.push<ClientModel>(
                   context,
                   MaterialPageRoute(
                     builder: (_) => RenewMembershipScreen(client: client),
                   ),
                 );
 
-                if (result == true) {
-                  // Refresh client details after renewal
-                  setState(() {});
+                if (updatedClient != null) {
+                  setState(() {
+                    client = updatedClient;
+                  });
                 }
               },
             ),

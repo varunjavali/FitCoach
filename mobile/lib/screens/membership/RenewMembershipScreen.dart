@@ -67,63 +67,62 @@ class _RenewMembershipScreenState
   }
 
   Future<void> renewMembership() async {
-    if (!_formKey.currentState!.validate()) return;
+  if (!_formKey.currentState!.validate()) return;
 
-    setState(() {
-      loading = true;
-    });
+  setState(() {
+    loading = true;
+  });
 
-    try {
-      final prefs =
-          await SharedPreferences.getInstance();
+  try {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString("token") ?? "";
 
-      final token = prefs.getString("token") ?? "";
+    final membership = MembershipModel(
+      id: "",
+      clientId: widget.client.id,
+      trainerId: "",
+      badge: selectedBadge,
+      durationMonths: selectedDuration,
+      startDate: DateTime.now(),
+      endDate: DateTime.now(),
+      totalFees: double.parse(totalFeesController.text),
+      amountPaid: double.parse(amountPaidController.text),
+      balanceDue: balance,
+      status: "Active",
+      remarks: remarksController.text,
+    );
 
-      final membership = MembershipModel(
-        id: "",
-        clientId: widget.client.id,
-        trainerId: "",
-        badge: selectedBadge,
-        durationMonths: selectedDuration,
-        startDate: DateTime.now(),
-        endDate: DateTime.now(),
-        totalFees:
-            double.parse(totalFeesController.text),
-        amountPaid:
-            double.parse(amountPaidController.text),
-        balanceDue: balance,
-        status: "Active",
-        remarks: remarksController.text,
-      );
+    final updatedClient = await _membershipService.renewMembership(
+      token: token,
+      clientId: widget.client.id,
+      membership: membership,
+    );
 
-      await _membershipService.renewMembership(
-        token: token,
-        clientId: widget.client.id,
-        membership: membership,
-      );
+    if (!mounted) return;
 
-      if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text("Membership renewed successfully"),
+      ),
+    );
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content:
-              Text("Membership renewed successfully"),
-        ),
-      );
+    Navigator.pop(context, updatedClient);
+  } catch (e) {
+    if (!mounted) return;
 
-      Navigator.pop(context, true);
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(e.toString()),
-        ),
-      );
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(e.toString()),
+      ),
+    );
+  } finally {
+    if (mounted) {
+      setState(() {
+        loading = false;
+      });
     }
-
-    setState(() {
-      loading = false;
-    });
   }
+}
 
   @override
   Widget build(BuildContext context) {

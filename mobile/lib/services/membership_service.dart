@@ -1,19 +1,20 @@
-import 'package:fit_coach/services/api_service.dart' show ApiService;
-
-import 'api_service.dart';
+import '../models/client_model.dart';
 import '../models/membership_model.dart';
+import 'api_service.dart';
 
 class MembershipService {
-  Future<void> renewMembership({
+  Future<ClientModel> renewMembership({
     required String token,
     required String clientId,
     required MembershipModel membership,
   }) async {
-    await ApiService.dio.post(
+    final response = await ApiService.dio.post(
       "/memberships/renew/$clientId",
       data: membership.toJson(),
       options: ApiService.authOptions(token),
     );
+
+    return ClientModel.fromJson(response.data["client"]);
   }
 
   Future<List<MembershipModel>> getHistory(
