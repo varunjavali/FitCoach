@@ -22,6 +22,11 @@ async function generateReceiptNo() {
 // ------------------------------------------------------
 exports.renewMembership = async (req, res) => {
     try {
+        console.log("========== RENEW MEMBERSHIP ==========");
+        console.log("Trainer:", req.trainer?._id);
+        console.log("Client ID:", req.params.clientId);
+        console.log("Body:", req.body);
+
         const { clientId } = req.params;
 
         const {
@@ -33,6 +38,12 @@ exports.renewMembership = async (req, res) => {
             remarks,
         } = req.body;
 
+        if (!badge || !durationMonths) {
+            return res.status(400).json({
+                message: "Badge and duration are required.",
+            });
+        }
+
         const client = await Client.findOne({
             _id: clientId,
             trainer: req.trainer._id,
@@ -40,7 +51,7 @@ exports.renewMembership = async (req, res) => {
 
         if (!client) {
             return res.status(404).json({
-                message: "Client not found",
+                message: "Client not found.",
             });
         }
 
@@ -51,7 +62,9 @@ exports.renewMembership = async (req, res) => {
                 status: "Active",
             },
             {
-                status: "Expired",
+                $set: {
+                    status: "Expired",
+                },
             }
         );
 
@@ -66,55 +79,45 @@ exports.renewMembership = async (req, res) => {
             endDate.getMonth() + Number(durationMonths)
         );
 
+        // Create Membership
         const membership = await Membership.create({
             trainer: req.trainer._id,
             client: client._id,
-
             badge,
             durationMonths,
-
             startDate,
             endDate,
-
             totalFees: fees,
             amountPaid: paid,
             balanceDue,
-
             remarks,
-
             status: "Active",
         });
 
-        // --------------------------------------------------
-        // Create payment entry
-        // --------------------------------------------------
+        console.log("Membership Created:", membership._id);
+
+        // Create Payment
         if (paid > 0) {
 
             const receiptNo = await generateReceiptNo();
 
-            await Payment.create({
+            const payment = await Payment.create({
                 trainer: req.trainer._id,
                 client: client._id,
-
                 receiptNo,
-
                 amount: paid,
-
                 paymentMethod: paymentMethod || "Cash",
-
                 paymentType: "Renewal",
-
                 status: "Success",
-
                 remarks: remarks || "Membership Renewal",
             });
+
+            console.log("Payment Created:", payment._id);
         }
 
-        // --------------------------------------------------
         // Update Client
-        // --------------------------------------------------
         client.membershipBadge = badge;
-        client.membershipDuration = durationMonths;
+        client.membershipDuration = Number(durationMonths);
         client.membershipStatus = "Active";
         client.membershipStartDate = startDate;
         client.membershipEndDate = endDate;
@@ -125,16 +128,22 @@ exports.renewMembership = async (req, res) => {
 
         await client.save();
 
-        res.status(200).json({
-            message: "Membership renewed successfully",
+        console.log("Client Updated:", client._id);
+
+        return res.status(200).json({
+            success: true,
+            message: "Membership renewed successfully.",
             membership,
             client,
         });
 
     } catch (err) {
+        console.error("========== RENEW MEMBERSHIP ERROR ==========");
         console.error(err);
+        console.error(err.stack);
 
-        res.status(500).json({
+        return res.status(500).json({
+            success: false,
             message: err.message,
         });
     }
