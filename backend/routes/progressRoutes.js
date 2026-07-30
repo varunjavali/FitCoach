@@ -3,6 +3,7 @@ const express = require("express");
 const router = express.Router();
 
 const authMiddleware = require("../middleware/authMiddleware");
+const clientAuthMiddleware = require("../middleware/clientAuthMiddleware");
 
 const {
   createProgress,
@@ -34,5 +35,10 @@ router.put("/:id", authMiddleware, updateProgress);
 
 // Delete progress
 router.delete("/:id", authMiddleware, deleteProgress);
+router.post(
+  "/",
+  clientAuthMiddleware,
+  createProgress
+);
 
 module.exports = router;

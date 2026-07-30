@@ -58,6 +58,7 @@ dependencies:
 
   # Blur & Icons
   flutter_svg: ^2.2.0
+  fl_chart: ^0.69.0
 
   
   

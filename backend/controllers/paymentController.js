@@ -1,13 +1,36 @@
 const Payment = require("../models/Payment");
 const Client = require("../models/Client");
 
-// Receive Payment
+// Generate Receipt Number
+async function generateReceiptNo() {
+  const count = await Payment.countDocuments();
+
+  const date = new Date();
+
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, "0");
+  const d = String(date.getDate()).padStart(2, "0");
+
+  return `RCPT-${y}${m}${d}-${String(count + 1).padStart(4, "0")}`;
+}
+
+// ======================================================
+// Add Payment
+// ======================================================
+
 exports.addPayment = async (req, res) => {
   try {
     const trainerId = req.trainer._id;
-    const { clientId, amount, paymentMethod, paymentType, remarks } = req.body;
 
-    if (!clientId || !amount || amount <= 0) {
+    const {
+      clientId,
+      amount,
+      paymentMethod,
+      paymentType,
+      remarks,
+    } = req.body;
+
+    if (!clientId || !amount || Number(amount) <= 0) {
       return res.status(400).json({
         message: "Invalid payment details",
       });
@@ -24,22 +47,20 @@ exports.addPayment = async (req, res) => {
       });
     }
 
-    // Save payment transaction
     const receiptNo = await generateReceiptNo();
 
-await Payment.create({
-  trainer: trainerId,
-  client: clientId,
-  receiptNo,
-  amount,
-  paymentMethod,
-  paymentType,
-  remarks,
-});
+    const payment = await Payment.create({
+      trainer: trainerId,
+      client: clientId,
+      receiptNo,
+      amount,
+      paymentMethod,
+      paymentType,
+      remarks,
+    });
 
-    // Update client balance
-    client.amountPaid += amount;
-    client.balanceDue -= amount;
+    client.amountPaid += Number(amount);
+    client.balanceDue -= Number(amount);
 
     if (client.balanceDue < 0) {
       client.balanceDue = 0;
@@ -47,9 +68,14 @@ await Payment.create({
 
     await client.save();
 
+    const savedPayment = await Payment.findById(payment._id).populate(
+      "client",
+      "name phone email"
+    );
+
     res.status(201).json({
       message: "Payment received successfully",
-      payment,
+      payment: savedPayment,
       client,
     });
   } catch (err) {
@@ -59,14 +85,19 @@ await Payment.create({
   }
 };
 
-// Client Payment History
-exports.getClientPayments = async (req, res) => {
+// ======================================================
+// Get All Payments
+// ======================================================
+
+exports.getPayments = async (req, res) => {
   try {
     const payments = await Payment.find({
-      client: req.params.clientId,
-    }).sort({
-      createdAt: -1,
-    });
+      trainer: req.trainer._id,
+    })
+      .populate("client", "name phone email")
+      .sort({
+        createdAt: -1,
+      });
 
     res.json(payments);
   } catch (err) {
@@ -76,11 +107,26 @@ exports.getClientPayments = async (req, res) => {
   }
 };
 
-// All Payments
-exports.getPayments = async (req, res) => {
+// ======================================================
+// Get Client Payment History
+// ======================================================
+
+exports.getClientPayments = async (req, res) => {
   try {
+    const client = await Client.findOne({
+      _id: req.params.clientId,
+      trainer: req.trainer._id,
+    });
+
+    if (!client) {
+      return res.status(404).json({
+        message: "Client not found",
+      });
+    }
+
     const payments = await Payment.find({
       trainer: req.trainer._id,
+      client: req.params.clientId,
     })
       .populate("client", "name phone")
       .sort({
@@ -95,11 +141,16 @@ exports.getPayments = async (req, res) => {
   }
 };
 
-// Payment Details
+// ======================================================
+// Get Single Payment
+// ======================================================
+
 exports.getPayment = async (req, res) => {
   try {
-    const payment = await Payment.findById(req.params.id)
-      .populate("client", "name phone email");
+    const payment = await Payment.findOne({
+      _id: req.params.id,
+      trainer: req.trainer._id,
+    }).populate("client", "name phone email");
 
     if (!payment) {
       return res.status(404).json({
@@ -115,10 +166,16 @@ exports.getPayment = async (req, res) => {
   }
 };
 
+// ======================================================
 // Delete Payment
+// ======================================================
+
 exports.deletePayment = async (req, res) => {
   try {
-    const payment = await Payment.findById(req.params.id);
+    const payment = await Payment.findOne({
+      _id: req.params.id,
+      trainer: req.trainer._id,
+    });
 
     if (!payment) {
       return res.status(404).json({
@@ -151,16 +208,3 @@ exports.deletePayment = async (req, res) => {
     });
   }
 };
-async function generateReceiptNo() {
-    const count = await Payment.countDocuments();
-  
-    const date = new Date();
-  
-    const y = date.getFullYear();
-  
-    const m = String(date.getMonth() + 1).padStart(2, "0");
-  
-    const d = String(date.getDate()).padStart(2, "0");
-  
-    return `RCPT-${y}${m}${d}-${String(count + 1).padStart(4, "0")}`;
-  }
