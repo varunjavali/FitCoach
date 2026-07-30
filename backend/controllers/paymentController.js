@@ -3,33 +3,17 @@ const Client = require("../models/Client");
 
 // ======================================================
 // Generate Receipt Number
-// ------------------------------------------------------
-// Scoped to today's date, and based on the highest existing
-// receipt number for today (not a raw document count), so
-// deleting a payment never causes a number to be reused.
 // ======================================================
-async function generateReceiptNo() {
-  const date = new Date();
+function generateReceiptNo(paymentId) {
+  const now = new Date();
 
-  const y = date.getFullYear();
-  const m = String(date.getMonth() + 1).padStart(2, "0");
-  const d = String(date.getDate()).padStart(2, "0");
+  const y = now.getFullYear();
+  const m = String(now.getMonth() + 1).padStart(2, "0");
+  const d = String(now.getDate()).padStart(2, "0");
 
-  const prefix = `RCPT-${y}${m}${d}-`;
+  const unique = paymentId.toString().slice(-8).toUpperCase();
 
-  // Find today's highest receipt number, not a count of documents.
-  const lastToday = await Payment.findOne({
-    receiptNo: { $regex: `^${prefix}` },
-  }).sort({ receiptNo: -1 });
-
-  let nextSeq = 1;
-
-  if (lastToday) {
-    const lastSeq = parseInt(lastToday.receiptNo.split("-").pop(), 10);
-    nextSeq = (isNaN(lastSeq) ? 0 : lastSeq) + 1;
-  }
-
-  return `${prefix}${String(nextSeq).padStart(4, "0")}`;
+  return `RCPT-${y}${m}${d}-${unique}`;
 }
 
 // ======================================================
@@ -40,8 +24,13 @@ exports.addPayment = async (req, res) => {
   try {
     const trainerId = req.trainer._id;
 
-    const { clientId, amount, paymentMethod, paymentType, remarks } =
-      req.body;
+    const {
+      clientId,
+      amount,
+      paymentMethod,
+      paymentType,
+      remarks,
+    } = req.body;
 
     if (!clientId || !amount || Number(amount) <= 0) {
       return res.status(400).json({
@@ -60,41 +49,22 @@ exports.addPayment = async (req, res) => {
       });
     }
 
-    // Retry a few times in case of a rare race condition where two
-    // requests generate the same receipt number at the same instant.
-    let payment;
-    let lastErr;
+    // Create payment without receipt number first
+    const payment = new Payment({
+      trainer: trainerId,
+      client: clientId,
+      amount,
+      paymentMethod,
+      paymentType,
+      remarks,
+    });
 
-    for (let attempt = 0; attempt < 3; attempt++) {
-      try {
-        const receiptNo = await generateReceiptNo();
+    // Generate unique receipt number using Mongo ObjectId
+    payment.receiptNo = generateReceiptNo(payment._id);
 
-        payment = await Payment.create({
-          trainer: trainerId,
-          client: clientId,
-          receiptNo,
-          amount,
-          paymentMethod,
-          paymentType,
-          remarks,
-        });
+    await payment.save();
 
-        lastErr = null;
-        break;
-      } catch (err) {
-        // Duplicate key error on receiptNo -> retry with a fresh number.
-        if (err.code === 11000 && err.keyPattern?.receiptNo) {
-          lastErr = err;
-          continue;
-        }
-        throw err;
-      }
-    }
-
-    if (lastErr) {
-      throw lastErr;
-    }
-
+    // Update client balance
     client.amountPaid += Number(amount);
     client.balanceDue -= Number(amount);
 
@@ -115,6 +85,8 @@ exports.addPayment = async (req, res) => {
       client,
     });
   } catch (err) {
+    console.error(err);
+
     res.status(500).json({
       message: err.message,
     });
