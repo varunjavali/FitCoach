@@ -1,17 +1,35 @@
 const Payment = require("../models/Payment");
 const Client = require("../models/Client");
 
+// ======================================================
 // Generate Receipt Number
+// ------------------------------------------------------
+// Scoped to today's date, and based on the highest existing
+// receipt number for today (not a raw document count), so
+// deleting a payment never causes a number to be reused.
+// ======================================================
 async function generateReceiptNo() {
-  const count = await Payment.countDocuments();
-
   const date = new Date();
 
   const y = date.getFullYear();
   const m = String(date.getMonth() + 1).padStart(2, "0");
   const d = String(date.getDate()).padStart(2, "0");
 
-  return `RCPT-${y}${m}${d}-${String(count + 1).padStart(4, "0")}`;
+  const prefix = `RCPT-${y}${m}${d}-`;
+
+  // Find today's highest receipt number, not a count of documents.
+  const lastToday = await Payment.findOne({
+    receiptNo: { $regex: `^${prefix}` },
+  }).sort({ receiptNo: -1 });
+
+  let nextSeq = 1;
+
+  if (lastToday) {
+    const lastSeq = parseInt(lastToday.receiptNo.split("-").pop(), 10);
+    nextSeq = (isNaN(lastSeq) ? 0 : lastSeq) + 1;
+  }
+
+  return `${prefix}${String(nextSeq).padStart(4, "0")}`;
 }
 
 // ======================================================
@@ -22,13 +40,8 @@ exports.addPayment = async (req, res) => {
   try {
     const trainerId = req.trainer._id;
 
-    const {
-      clientId,
-      amount,
-      paymentMethod,
-      paymentType,
-      remarks,
-    } = req.body;
+    const { clientId, amount, paymentMethod, paymentType, remarks } =
+      req.body;
 
     if (!clientId || !amount || Number(amount) <= 0) {
       return res.status(400).json({
@@ -47,17 +60,40 @@ exports.addPayment = async (req, res) => {
       });
     }
 
-    const receiptNo = await generateReceiptNo();
+    // Retry a few times in case of a rare race condition where two
+    // requests generate the same receipt number at the same instant.
+    let payment;
+    let lastErr;
 
-    const payment = await Payment.create({
-      trainer: trainerId,
-      client: clientId,
-      receiptNo,
-      amount,
-      paymentMethod,
-      paymentType,
-      remarks,
-    });
+    for (let attempt = 0; attempt < 3; attempt++) {
+      try {
+        const receiptNo = await generateReceiptNo();
+
+        payment = await Payment.create({
+          trainer: trainerId,
+          client: clientId,
+          receiptNo,
+          amount,
+          paymentMethod,
+          paymentType,
+          remarks,
+        });
+
+        lastErr = null;
+        break;
+      } catch (err) {
+        // Duplicate key error on receiptNo -> retry with a fresh number.
+        if (err.code === 11000 && err.keyPattern?.receiptNo) {
+          lastErr = err;
+          continue;
+        }
+        throw err;
+      }
+    }
+
+    if (lastErr) {
+      throw lastErr;
+    }
 
     client.amountPaid += Number(amount);
     client.balanceDue -= Number(amount);

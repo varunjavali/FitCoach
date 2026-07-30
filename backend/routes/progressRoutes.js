@@ -3,7 +3,6 @@ const express = require("express");
 const router = express.Router();
 
 const authMiddleware = require("../middleware/authMiddleware");
-const clientAuthMiddleware = require("../middleware/clientAuthMiddleware");
 
 const {
   createProgress,
@@ -17,28 +16,35 @@ const {
 // Create Progress
 router.post("/", authMiddleware, createProgress);
 
-// Get all progress records
+// Get all progress
 router.get("/", authMiddleware, getProgressList);
 
-// Get progress of a specific client
+// Get progress by client
 router.get(
   "/client/:clientId",
   authMiddleware,
   getClientProgress
 );
 
-// Get single progress record
-router.get("/:id", authMiddleware, getProgress);
+// Get single progress
+router.get(
+  "/:id",
+  authMiddleware,
+  getProgress
+);
 
 // Update progress
-router.put("/:id", authMiddleware, updateProgress);
+router.put(
+  "/:id",
+  authMiddleware,
+  updateProgress
+);
 
 // Delete progress
-router.delete("/:id", authMiddleware, deleteProgress);
-router.post(
-  "/",
-  clientAuthMiddleware,
-  createProgress
+router.delete(
+  "/:id",
+  authMiddleware,
+  deleteProgress
 );
 
 module.exports = router;

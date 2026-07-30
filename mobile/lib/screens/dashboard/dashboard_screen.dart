@@ -6,6 +6,7 @@ import '../../services/client_service.dart';
 
 import '../clients/client_list_screen.dart';
 import '../payments/payment_list_screen.dart';
+import '../progress/progress_client_list_screen.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -576,8 +577,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
                               builder: (_) => const PaymentListScreen(),
                             ),
                           );
-
-                          
                         },
                       ),
                       actionButton(
@@ -595,8 +594,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       actionButton(
                         icon: Icons.show_chart,
                         title: "Progress",
-                        onTap: () {},
                         color: Colors.purple,
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const ProgressClientListScreen(),
+                            ),
+                          );
+                        },
                       ),
                     ],
                   ),

@@ -11,18 +11,14 @@ import 'progress_detail_screen.dart';
 class ClientProgressListScreen extends StatefulWidget {
   final ClientModel client;
 
-  const ClientProgressListScreen({
-    super.key,
-    required this.client,
-  });
+  const ClientProgressListScreen({super.key, required this.client});
 
   @override
   State<ClientProgressListScreen> createState() =>
       _ClientProgressListScreenState();
 }
 
-class _ClientProgressListScreenState
-    extends State<ClientProgressListScreen> {
+class _ClientProgressListScreenState extends State<ClientProgressListScreen> {
   final ProgressService progressService = ProgressService();
 
   List<ProgressModel> progressList = [];
@@ -59,11 +55,9 @@ class _ClientProgressListScreenState
         loading = false;
       });
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(e.toString()),
-        ),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(e.toString())));
     }
   }
 
@@ -72,8 +66,7 @@ class _ClientProgressListScreenState
   //----------------------------------------------------
 
   List<ProgressModel> get _chronological {
-    final sorted = [...progressList]
-      ..sort((a, b) => a.date.compareTo(b.date));
+    final sorted = [...progressList]..sort((a, b) => a.date.compareTo(b.date));
     return sorted;
   }
 
@@ -82,9 +75,7 @@ class _ClientProgressListScreenState
 
     if (points.length < 2) {
       return Card(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         child: const Padding(
           padding: EdgeInsets.all(24),
           child: Center(
@@ -107,9 +98,7 @@ class _ClientProgressListScreenState
     final maxY = points.map((e) => e.weight).reduce((a, b) => a > b ? a : b);
 
     return Card(
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: Padding(
         padding: const EdgeInsets.fromLTRB(12, 20, 20, 12),
         child: Column(
@@ -177,14 +166,10 @@ class _ClientProgressListScreenState
     return Card(
       margin: const EdgeInsets.only(bottom: 15),
       child: ListTile(
-        leading: const CircleAvatar(
-          child: Icon(Icons.show_chart),
-        ),
+        leading: const CircleAvatar(child: Icon(Icons.show_chart)),
         title: Text(
           "${progress.weight} kg",
-          style: const TextStyle(
-            fontWeight: FontWeight.bold,
-          ),
+          style: const TextStyle(fontWeight: FontWeight.bold),
         ),
         subtitle: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -198,9 +183,7 @@ class _ClientProgressListScreenState
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (_) => ProgressDetailScreen(
-                progress: progress,
-              ),
+              builder: (_) => ProgressDetailScreen(progress: progress),
             ),
           );
         },
@@ -211,9 +194,7 @@ class _ClientProgressListScreenState
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text("${widget.client.name}'s Progress"),
-      ),
+      appBar: AppBar(title: Text("${widget.client.name}'s Progress")),
       // floatingActionButton: FloatingActionButton.extended(
       //   onPressed: () async {
       //     final result = await Navigator.push(
@@ -231,9 +212,7 @@ class _ClientProgressListScreenState
       //   label: const Text("Add Progress"),
       // ),
       body: loading
-          ? const Center(
-              child: CircularProgressIndicator(),
-            )
+          ? const Center(child: CircularProgressIndicator())
           : RefreshIndicator(
               onRefresh: loadProgress,
               child: ListView(

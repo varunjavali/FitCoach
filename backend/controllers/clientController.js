@@ -4,7 +4,7 @@ const Diet = require("../models/Diet");
 const Membership = require("../models/membership");
 const Progress = require("../models/Progress");
 const bcrypt = require("bcryptjs");
-
+const Payment = require("../models/Payment");
 // ==========================
 // Add Client
 // ==========================
@@ -217,45 +217,75 @@ exports.updateClient = async (req, res) => {
 // ==========================
 // Update Balance
 // ==========================
+async function generateReceiptNo() {
+  const today = new Date();
+
+  const y = today.getFullYear();
+  const m = String(today.getMonth() + 1).padStart(2, "0");
+  const d = String(today.getDate()).padStart(2, "0");
+
+  const prefix = `RCPT-${y}${m}${d}-`;
+
+  const lastPayment = await Payment.findOne({
+      receiptNo: { $regex: `^${prefix}` },
+  }).sort({ createdAt: -1 });
+
+  let nextNumber = 1;
+
+  if (lastPayment && lastPayment.receiptNo) {
+      const parts = lastPayment.receiptNo.split("-");
+      nextNumber = parseInt(parts[2], 10) + 1;
+  }
+
+  return `${prefix}${String(nextNumber).padStart(4, "0")}`;
+}
 exports.updateBalance = async (req, res) => {
   try {
-    const { amount } = req.body;
 
-    const client = await Client.findOne({
-      _id: req.params.id,
-      trainer: req.trainer._id,
-    });
+      const { amount, paymentMethod, remarks } = req.body;
 
-    if (!client) {
-      return res.status(404).json({
-        message: "Client not found",
+      const client = await Client.findOne({
+          _id: req.params.id,
+          trainer: req.trainer._id,
       });
-    }
 
-    const receiveAmount = Number(amount);
+      if (!client) {
+          return res.status(404).json({
+              message: "Client not found",
+          });
+      }
 
-    if (isNaN(receiveAmount) || receiveAmount <= 0) {
-      return res.status(400).json({
-        message: "Please enter a valid amount",
+      client.amountPaid += Number(amount);
+
+      client.balanceDue -= Number(amount);
+
+      if (client.balanceDue < 0) {
+          client.balanceDue = 0;
+      }
+
+      await client.save();
+
+      const receiptNo = await generateReceiptNo();
+
+      await Payment.create({
+          trainer: req.trainer._id,
+          client: client._id,
+          receiptNo,
+          amount: Number(amount),
+          paymentMethod: paymentMethod || "Cash",
+          paymentType: "Balance",
+          status: "Success",
+          remarks: remarks || "Balance Payment",
       });
-    }
 
-    if (receiveAmount > client.balanceDue) {
-      return res.status(400).json({
-        message: "Amount exceeds balance due",
-      });
-    }
+      res.json(client);
 
-    client.amountPaid += receiveAmount;
-    client.balanceDue = client.totalFees - client.amountPaid;
-
-    await client.save();
-
-    res.json(client);
   } catch (err) {
-    res.status(500).json({
-      message: err.message,
-    });
+
+      res.status(500).json({
+          message: err.message,
+      });
+
   }
 };
 

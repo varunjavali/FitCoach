@@ -102,30 +102,25 @@ class ClientService {
 
   /// Update Balance
   Future<ClientModel> updateBalance(
-    String token,
-    String clientId,
-    double amount,
-  ) async {
-    try {
-      final response = await ApiService.dio.put(
-        "/clients/$clientId/update-balance",
-        data: {
-          "amount": amount,
-        },
-        options: Options(
-          headers: {
-            "Authorization": "Bearer $token",
-          },
-        ),
-      );
+  String token,
+  String clientId,
+  double amount,
+  String paymentMethod,
+  String remarks,
+) async {
 
-      return ClientModel.fromJson(response.data);
-    } on DioException catch (e) {
-      throw Exception(
-        e.response?.data["message"] ?? "Failed to update balance",
-      );
-    }
-  }
+  final response = await ApiService.dio.put(
+    "/clients/balance/$clientId",
+    data: {
+      "amount": amount,
+      "paymentMethod": paymentMethod,
+      "remarks": remarks,
+    },
+    options: ApiService.authOptions(token),
+  );
+
+  return ClientModel.fromJson(response.data);
+}
 
   /// Delete client
   Future<void> deleteClient(

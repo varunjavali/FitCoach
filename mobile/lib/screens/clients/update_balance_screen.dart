@@ -7,18 +7,17 @@ import '../../../services/client_service.dart';
 class UpdateBalanceScreen extends StatefulWidget {
   final ClientModel client;
 
-  const UpdateBalanceScreen({
-    super.key,
-    required this.client,
-  });
+  const UpdateBalanceScreen({super.key, required this.client});
 
   @override
-  State<UpdateBalanceScreen> createState() =>
-      _UpdateBalanceScreenState();
+  State<UpdateBalanceScreen> createState() => _UpdateBalanceScreenState();
 }
 
 class _UpdateBalanceScreenState extends State<UpdateBalanceScreen> {
   final amountController = TextEditingController();
+  String paymentMethod = "Cash";
+
+  final remarksController = TextEditingController();
 
   bool loading = false;
 
@@ -47,6 +46,8 @@ class _UpdateBalanceScreenState extends State<UpdateBalanceScreen> {
         token,
         widget.client.id,
         amount,
+        paymentMethod,
+        remarksController.text.trim(),
       );
 
       if (!mounted) return;
@@ -55,9 +56,9 @@ class _UpdateBalanceScreenState extends State<UpdateBalanceScreen> {
     } catch (e) {
       if (!mounted) return;
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.toString())),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(e.toString())));
     } finally {
       if (mounted) {
         setState(() {
@@ -76,9 +77,7 @@ class _UpdateBalanceScreenState extends State<UpdateBalanceScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text("Update Balance"),
-      ),
+      appBar: AppBar(title: const Text("Update Balance")),
       body: Padding(
         padding: const EdgeInsets.all(20),
         child: Column(
@@ -119,6 +118,37 @@ class _UpdateBalanceScreenState extends State<UpdateBalanceScreen> {
               ),
               decoration: const InputDecoration(
                 labelText: "Receive Amount",
+                border: OutlineInputBorder(),
+              ),
+            ),
+
+            const SizedBox(height: 20),
+
+            DropdownButtonFormField<String>(
+              value: paymentMethod,
+              decoration: const InputDecoration(
+                labelText: "Payment Method",
+                border: OutlineInputBorder(),
+              ),
+              items: const [
+                DropdownMenuItem(value: "Cash", child: Text("Cash")),
+                DropdownMenuItem(value: "UPI", child: Text("UPI")),
+                DropdownMenuItem(value: "Card", child: Text("Card")),
+                DropdownMenuItem(value: "Bank", child: Text("Bank")),
+              ],
+              onChanged: (value) {
+                setState(() {
+                  paymentMethod = value!;
+                });
+              },
+            ),
+
+            const SizedBox(height: 20),
+
+            TextField(
+              controller: remarksController,
+              decoration: const InputDecoration(
+                labelText: "Remarks",
                 border: OutlineInputBorder(),
               ),
             ),
