@@ -54,6 +54,7 @@ dependencies:
 
   # Biometrics
   local_auth: ^2.3.0
+  intl: ^0.20.2
 
   # Blur & Icons
   flutter_svg: ^2.2.0

@@ -1,8 +1,10 @@
+import 'membership_model.dart';
+
 class DashboardModel {
   final Client client;
   final TodayWorkout? todayWorkout;
   final TodayDiet? todayDiet;
-  final Membership? membership;
+  final MembershipModel? membership;
 
   DashboardModel({
     required this.client,
@@ -22,7 +24,7 @@ class DashboardModel {
           : TodayDiet.fromJson(json["todayDiet"]),
       membership: json["membership"] == null
           ? null
-          : Membership.fromJson(json["membership"]),
+          : MembershipModel.fromJson(json["membership"]),
     );
   }
 }
@@ -38,6 +40,7 @@ class Client {
   final double weight;
   final String goal;
   final DateTime? joiningDate;
+
   final double totalFees;
   final double amountPaid;
   final double balanceDue;
@@ -55,13 +58,14 @@ class Client {
     required this.totalFees,
     required this.amountPaid,
     required this.balanceDue,
-
     this.joiningDate,
   });
 
   factory Client.fromJson(Map<String, dynamic> json) {
     return Client(
-      id: json["id"]?.toString() ?? "",
+      id: json["_id"]?.toString() ??
+          json["id"]?.toString() ??
+          "",
       name: json["name"] ?? "",
       email: json["email"] ?? "",
       phone: json["phone"] ?? "",
@@ -70,9 +74,9 @@ class Client {
       height: (json["height"] ?? 0).toDouble(),
       weight: (json["weight"] ?? 0).toDouble(),
       goal: json["goal"] ?? "",
-         totalFees: (json["totalFees"] ?? 0).toDouble(),
-    amountPaid: (json["amountPaid"] ?? 0).toDouble(),
-    balanceDue: (json["balanceDue"] ?? 0).toDouble(),
+      totalFees: (json["totalFees"] ?? 0).toDouble(),
+      amountPaid: (json["amountPaid"] ?? 0).toDouble(),
+      balanceDue: (json["balanceDue"] ?? 0).toDouble(),
       joiningDate: json["joiningDate"] == null
           ? null
           : DateTime.tryParse(json["joiningDate"]),
@@ -93,7 +97,9 @@ class TodayWorkout {
 
   factory TodayWorkout.fromJson(Map<String, dynamic> json) {
     return TodayWorkout(
-      id: json["id"]?.toString() ?? "",
+      id: json["_id"]?.toString() ??
+          json["id"]?.toString() ??
+          "",
       title: json["title"] ?? "",
       exerciseCount: json["exerciseCount"] ?? 0,
     );
@@ -105,23 +111,19 @@ class TodayDiet {
   final String title;
   final int calories;
 
-  TodayDiet({required this.id, required this.title, required this.calories});
+  TodayDiet({
+    required this.id,
+    required this.title,
+    required this.calories,
+  });
 
   factory TodayDiet.fromJson(Map<String, dynamic> json) {
     return TodayDiet(
-      id: json["id"]?.toString() ?? "",
+      id: json["_id"]?.toString() ??
+          json["id"]?.toString() ??
+          "",
       title: json["title"] ?? "",
       calories: json["calories"] ?? 0,
     );
-  }
-}
-
-class Membership {
-  final String plan;
-
-  Membership({required this.plan});
-
-  factory Membership.fromJson(Map<String, dynamic> json) {
-    return Membership(plan: json["plan"] ?? "");
   }
 }

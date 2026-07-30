@@ -41,6 +41,7 @@ const io = new Server(server, {
     methods: ["GET", "POST"],
   },
 });
+const clientMembershipRoutes = require("./routes/clientMembershipRoutes");
 
 // Make io available everywhere
 app.set("io", io);
@@ -64,6 +65,12 @@ app.use(express.json());
 // ==================================
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 app.use("/api/payments", paymentRoutes);
+
+
+app.use(
+  "/api/client-membership",
+  clientMembershipRoutes
+);
 
 // ==================================
 // Trainer APIs

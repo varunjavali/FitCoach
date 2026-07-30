@@ -1,9 +1,11 @@
 import 'package:fitcoach_client/screens/profile/profile_screen.dart';
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart' show DateFormat;
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../models/dashboard_model.dart';
 import '../../services/dashboard_service.dart';
+import '../membership/membership_screen.dart' show MembershipScreen;
 import 'progress_screen.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -160,62 +162,58 @@ class _HomeScreenState extends State<HomeScreen> {
     }
 
     return Scaffold(
-      appBar:AppBar(
-  elevation: 0,
-  centerTitle: true,
-  title: const Text("Fitness Equation"),
+      appBar: AppBar(
+        elevation: 0,
+        centerTitle: true,
+        title: const Text("Fitness Equation"),
 
-  // Profile Image (Top Left)
-  leadingWidth: 65,
-  leading: Padding(
-    padding: const EdgeInsets.only(left: 12),
-    child: GestureDetector(
-      onTap: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (_) => const ProfileScreen(),
-          ),
-        );
-      },
-      child: const CircleAvatar(
-        radius: 18,
-        backgroundImage: AssetImage(
-          "assets/images/logo.jpeg",
-        ),
-      ),
-    ),
-  ),
-
-  // Balance Due (Top Right)
-  actions: [
-    Padding(
-      padding: const EdgeInsets.only(right: 16),
-      child: Center(
-        child: Container(
-          padding: const EdgeInsets.symmetric(
-            horizontal: 12,
-            vertical: 6,
-          ),
-          decoration: BoxDecoration(
-            color: dashboard!.client.balanceDue > 0
-                ? Colors.redAccent
-                : Colors.green,
-            borderRadius: BorderRadius.circular(20),
-          ),
-          child: Text(
-            "Due ₹${dashboard!.client.balanceDue.toStringAsFixed(0)}",
-            style: const TextStyle(
-              color: Colors.white,
-              fontWeight: FontWeight.bold,
-              fontSize: 14,
+        // Profile Image (Top Left)
+        leadingWidth: 65,
+        leading: Padding(
+          padding: const EdgeInsets.only(left: 12),
+          child: GestureDetector(
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const ProfileScreen()),
+              );
+            },
+            child: const CircleAvatar(
+              radius: 18,
+              backgroundImage: AssetImage("assets/images/logo.jpeg"),
             ),
           ),
         ),
+
+        // Balance Due (Top Right)
+        actions: [
+          Padding(
+            padding: const EdgeInsets.only(right: 16),
+            child: Center(
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 6,
+                ),
+                decoration: BoxDecoration(
+                  color: dashboard!.client.balanceDue > 0
+                      ? Colors.redAccent
+                      : Colors.green,
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Text(
+                  "Due ₹${dashboard!.client.balanceDue.toStringAsFixed(0)}",
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 14,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
-    ),
-  ],
-),
       body: RefreshIndicator(
         onRefresh: loadDashboard,
         child: SingleChildScrollView(
@@ -295,15 +293,23 @@ class _HomeScreenState extends State<HomeScreen> {
                 },
               ),
 
-              dashboardCard(
-                title: "Membership",
-                subtitle: dashboard!.membership == null
-                    ? "No Membership"
-                    : dashboard!.membership!.plan,
-                icon: Icons.workspace_premium,
-                color: Colors.amber,
+              InkWell(
+                borderRadius: BorderRadius.circular(16),
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const MembershipScreen()),
+                  );
+                },
+                child: dashboardCard(
+                  title: "Membership",
+                  subtitle: dashboard!.membership == null
+                      ? "No Active Membership"
+                      : "${dashboard!.membership!.badge} • Expires ${DateFormat('dd MMM yyyy').format(dashboard!.membership!.endDate)}",
+                  icon: Icons.workspace_premium,
+                  color: Colors.amber,
+                ),
               ),
-
               dashboardCard(
                 title: "Goal",
                 subtitle: dashboard!.client.goal,
