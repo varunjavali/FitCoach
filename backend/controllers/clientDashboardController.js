@@ -1,6 +1,7 @@
 const Client = require("../models/Client");
 const Workout = require("../models/Workout");
 const Diet = require("../models/Diet");
+const Membership = require("../models/Membership");
 
 const WEEKDAYS = [
   "Sunday",
@@ -24,18 +25,23 @@ exports.getDashboard = async (req, res) => {
 
     const today = WEEKDAYS[new Date().getDay()];
 
-    // Latest workout/diet assigned for today's weekday
-    const [todayWorkoutDoc, todayDietDoc] = await Promise.all([
-      Workout.findOne({
-        client: client._id,
-        day: today,
-      }).sort({ createdAt: -1 }),
+    // Latest workout for today
+    const todayWorkoutDoc = await Workout.findOne({
+      client: client._id,
+      day: today,
+    }).sort({ createdAt: -1 });
 
-      Diet.findOne({
-        client: client._id,
-        day: today,
-      }).sort({ createdAt: -1 }),
-    ]);
+    // Latest diet for today
+    const todayDietDoc = await Diet.findOne({
+      client: client._id,
+      day: today,
+    }).sort({ createdAt: -1 });
+
+    // Current active membership
+    const membershipDoc = await Membership.findOne({
+      client: client._id,
+      status: "Active",
+    }).sort({ createdAt: -1 });
 
     const todayWorkout = todayWorkoutDoc
       ? {
@@ -56,6 +62,21 @@ exports.getDashboard = async (req, res) => {
         }
       : null;
 
+    const membership = membershipDoc
+      ? {
+          id: membershipDoc._id,
+          badge: membershipDoc.badge,
+          durationMonths: membershipDoc.durationMonths,
+          startDate: membershipDoc.startDate,
+          endDate: membershipDoc.endDate,
+          totalFees: membershipDoc.totalFees,
+          amountPaid: membershipDoc.amountPaid,
+          balanceDue: membershipDoc.balanceDue,
+          status: membershipDoc.status,
+          remarks: membershipDoc.remarks,
+        }
+      : null;
+
     res.json({
       client: {
         id: client._id,
@@ -68,8 +89,6 @@ exports.getDashboard = async (req, res) => {
         weight: client.weight,
         goal: client.goal,
         joiningDate: client.joiningDate,
-        
-      
         totalFees: client.totalFees,
         amountPaid: client.amountPaid,
         balanceDue: client.balanceDue,
@@ -81,13 +100,15 @@ exports.getDashboard = async (req, res) => {
 
       todayDiet,
 
-      membership: null,
+      membership,
 
       notifications: [],
 
       upcomingSession: null,
     });
   } catch (err) {
+    console.error(err);
+
     res.status(500).json({
       message: err.message,
     });

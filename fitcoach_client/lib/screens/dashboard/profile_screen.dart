@@ -8,6 +8,7 @@ import '../../models/dashboard_model.dart';
 import '../../services/dashboard_service.dart';
 import '../auth/change_password_screen.dart';
 import '../auth/login_screen.dart';
+import '../payment/payment_history_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -524,9 +525,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
                     const SizedBox(height: 25),
 
-                    //-------------------------------------------------
-                    // Actions
-                    //-------------------------------------------------
+                    actionTile(
+                      icon: Icons.receipt_long,
+                      label: "Payment History",
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const PaymentHistoryScreen(),
+                          ),
+                        );
+                      },
+                    ),
                     actionTile(
                       icon: Icons.lock_reset,
                       label: "Change Password",

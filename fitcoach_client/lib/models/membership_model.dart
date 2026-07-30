@@ -1,4 +1,3 @@
-
 class MembershipModel {
   final String id;
   final String badge;
@@ -26,16 +25,16 @@ class MembershipModel {
 
   factory MembershipModel.fromJson(Map<String, dynamic> json) {
     return MembershipModel(
-      id: json["_id"] ?? "",
-      badge: json["badge"] ?? "",
+      id: json["_id"]?.toString() ?? "",
+      badge: json["badge"]?.toString() ?? "",
       durationMonths: json["durationMonths"] ?? 0,
       startDate: DateTime.parse(json["startDate"]),
       endDate: DateTime.parse(json["endDate"]),
       totalFees: (json["totalFees"] ?? 0).toDouble(),
       amountPaid: (json["amountPaid"] ?? 0).toDouble(),
       balanceDue: (json["balanceDue"] ?? 0).toDouble(),
-      status: json["status"] ?? "",
-      remarks: json["remarks"] ?? "",
+      status: json["status"]?.toString() ?? "",
+      remarks: json["remarks"]?.toString() ?? "",
     );
   }
 }

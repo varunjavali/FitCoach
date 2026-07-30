@@ -22,6 +22,8 @@ const clientAuthRoutes = require("./routes/clientAuthRoutes");
 const chatRoutes = require("./routes/chatRoutes");
 const membershipRoutes = require("./routes/membershipRoutes");
 const paymentRoutes = require("./routes/paymentRoutes");
+const clientMembershipRoutes = require("./routes/clientMembershipRoutes");
+const clientPaymentRoutes = require("./routes/clientPaymentRoutes");
 
 // Socket
 const initializeSocket = require("./socket/socket");
@@ -41,7 +43,7 @@ const io = new Server(server, {
     methods: ["GET", "POST"],
   },
 });
-const clientMembershipRoutes = require("./routes/clientMembershipRoutes");
+
 
 // Make io available everywhere
 app.set("io", io);
@@ -70,6 +72,10 @@ app.use("/api/payments", paymentRoutes);
 app.use(
   "/api/client-membership",
   clientMembershipRoutes
+);
+app.use(
+  "/api/client-payments",
+  clientPaymentRoutes
 );
 
 // ==================================
