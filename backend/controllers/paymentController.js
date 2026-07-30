@@ -14,6 +14,7 @@ function generateReceiptNo(paymentId) {
   const unique = paymentId.toString().slice(-8).toUpperCase();
 
   return `RCPT-${y}${m}${d}-${unique}`;
+  
 }
 
 // ======================================================
@@ -61,6 +62,7 @@ exports.addPayment = async (req, res) => {
 
     // Generate unique receipt number using Mongo ObjectId
     payment.receiptNo = generateReceiptNo(payment._id);
+    console.log("Generated Receipt:", payment.receiptNo);
 
     await payment.save();
 
